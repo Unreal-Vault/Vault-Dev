@@ -75,6 +75,8 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 
 	void OnSearchBoxChanged(const FText& inSearchText);
 
+	void OnSearchBoxCommitted(const FText& InFilterText, ETextCommit::Type CommitType);
+
 	TArray<TSharedPtr<FVaultMetadata>> FilteredAssetItems;
 
 	float TileUserScale = 1.0f;

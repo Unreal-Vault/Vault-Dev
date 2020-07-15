@@ -301,6 +301,7 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 							SAssignNew(SearchBox, SSearchBox)
 							.HintText(LOCTEXT("SearchBoxHintText", "Search..."))
 							.OnTextChanged(this, &SLoaderWindow::OnSearchBoxChanged)
+							.OnTextCommitted(this, &SLoaderWindow::OnSearchBoxCommitted)
 							.DelayChangeNotificationsWhileTyping(false)
 							.Visibility(EVisibility::Visible)
 							.AddMetaData<FTagMetaData>(FTagMetaData(TEXT("AssetSearch")))
@@ -471,18 +472,24 @@ TSharedRef<ITableRow> SLoaderWindow::MakeDeveloperFilterViewWidget(FDeveloperFil
 
 void SLoaderWindow::OnSearchBoxChanged(const FText& inSearchText)
 {
-
-	if (inSearchText.IsEmpty())
-	{
-		return;
-	}
-
-
-
 	FilteredAssetItems.Empty();
 	TArray<FVaultMetadata> MetaFiles;
 
 	MetaFiles = FMetadataOps::FindAllMetadataInLibrary();
+
+	// If its now empty, it was probably cleared or backspaced through, so we need to repopulate with everything again.
+	if (inSearchText.IsEmpty())
+	{
+		for (FVaultMetadata Meta : MetaFiles)
+		{
+			FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Meta)));
+		}
+		TileView->RebuildList();
+		TileView->ScrollToTop();
+		return;
+	}
+
+
 
 	// Store Strict Search - This controls if we only search pack name, or various data entries.
 	const bool bStrictSearch = StrictSearchCheckBox->GetCheckedState() == ECheckBoxState::Checked;
@@ -509,6 +516,11 @@ void SLoaderWindow::OnSearchBoxChanged(const FText& inSearchText)
 	TileView->RebuildList();
 	TileView->ScrollToTop();
 
+}
+
+void SLoaderWindow::OnSearchBoxCommitted(const FText& InFilterText, ETextCommit::Type CommitType)
+{
+	OnSearchBoxChanged(InFilterText);
 }
 
 void SLoaderWindow::OnThumbnailSliderValueChanged(float Value)
