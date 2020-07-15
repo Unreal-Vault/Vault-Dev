@@ -12,6 +12,12 @@
 
 #define LOCTEXT_NAMESPACE "SVaultLoader"
 
+const int32 SLoaderWindow::THUMBNAIL_BASE_HEIGHT = 415;
+const int32 SLoaderWindow::THUMBNAIL_BASE_WIDTH = 415;
+const int32 SLoaderWindow::TILE_BASE_HEIGHT = 465;
+const int32 SLoaderWindow::TILE_BASE_WIDTH = 415;
+
+
 namespace VaultColumnNames
 {
 	static const FName TagCheckedColumnName(TEXT("Flag"));
@@ -124,6 +130,14 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 {
 	PopulateBaseAssetList();
 
+	// Set the Default Scale for Sliders. 
+	TileUserScale = 0.5;
+
+	const float TILE_SCALED_WIDTH = TILE_BASE_WIDTH * TileUserScale;
+	const float TILE_SCALED_HEIGHT = TILE_BASE_HEIGHT * TileUserScale;
+
+
+
 	// Set up tag array
 	TSet<FString> TagCloudTemp;
 	FVaultSettings::Get().ReadVaultTags(TagCloudTemp);
@@ -168,16 +182,13 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 	}
 
 
-
-
-
 	// Main Widget
 	TSharedRef<SVerticalBox> LoaderRoot = SNew(SVerticalBox)
 
 		+ SVerticalBox::Slot()
 		.FillHeight(1.0f)
 		[
-	// Primary 3 Boxes go in Here
+			// Primary 3 Boxes go in Here
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
 			[
@@ -186,19 +197,19 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 			
 				+SSplitter::Slot()
 				.Value(0.2f)
-		[
-			SNew(SBorder)
-			.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
-			.Padding(FMargin(4.0f, 4.0f))
 				[
-					// Left Sidebar!
-					SNew(SVerticalBox)
-					+SVerticalBox::Slot()
-					.AutoHeight()
+					SNew(SBorder)
+					.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
+					.Padding(FMargin(4.0f, 4.0f))
 					[
-						SNew(STextBlock)
-						.Text(LOCTEXT("VaultLoaderSidebarHeaderLabel", "VAULT LOADER"))
-					]
+						// Left Sidebar!
+						SNew(SVerticalBox)
+						+SVerticalBox::Slot()
+						.AutoHeight()
+						[
+							SNew(STextBlock)
+							.Text(LOCTEXT("VaultLoaderSidebarHeaderLabel", "VAULT LOADER"))
+						]
 
 					// Asset List Amount
 					+ SVerticalBox::Slot()
@@ -281,23 +292,49 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 					+ SVerticalBox::Slot()
 					.AutoHeight()
 					[
-						// Center content area
-						SAssignNew(SearchBox, SSearchBox)
-						.HintText(LOCTEXT("SearchBoxHintText", "Search..."))
-						.OnTextChanged(this, &SLoaderWindow::OnSearchBoxChanged)
-						.DelayChangeNotificationsWhileTyping(true)
-						.Visibility(EVisibility::Visible)
-						.AddMetaData<FTagMetaData>(FTagMetaData(TEXT("AssetSearch")))
+						SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot()
+						.FillWidth(1)
+						.Padding(FMargin(0,3,0,0))
+						[
+							// Center content area
+							SAssignNew(SearchBox, SSearchBox)
+							.HintText(LOCTEXT("SearchBoxHintText", "Search..."))
+							.OnTextChanged(this, &SLoaderWindow::OnSearchBoxChanged)
+							.DelayChangeNotificationsWhileTyping(false)
+							.Visibility(EVisibility::Visible)
+							.AddMetaData<FTagMetaData>(FTagMetaData(TEXT("AssetSearch")))
+						]
+						+ SHorizontalBox::Slot()
+						.AutoWidth()
+						[
+							SNew(STextBlock)
+							.Text(LOCTEXT("StrictSearchCheckBox", "Strict Search"))
+							.Justification(ETextJustify::Right)
+						]
+						+ SHorizontalBox::Slot()
+						.AutoWidth()
+						[
+							SAssignNew(StrictSearchCheckBox, SCheckBox)
+						]
 					]
 
 					// Tile View
 					+ SVerticalBox::Slot()
 					.FillHeight(1.0f)
 						[
-							SAssignNew(TileView, STileView<TSharedPtr<FVaultMetadata>>)
-							.ListItemsSource(&FilteredAssetItems)
-							.OnGenerateTile(this, &SLoaderWindow::MakeTileViewWidget)
-							//.OnContextMenuOpening()
+							SNew(SBox)
+							.Padding(FMargin(5,5,5,5))
+							[
+								SAssignNew(TileView, STileView<TSharedPtr<FVaultMetadata>>)
+								.ItemWidth(TILE_SCALED_WIDTH)
+								.ItemHeight(TILE_SCALED_HEIGHT)
+								.ItemAlignment(EListItemAlignment::EvenlyDistributed)
+								.ListItemsSource(&FilteredAssetItems)
+								.OnGenerateTile(this, &SLoaderWindow::MakeTileViewWidget)
+								//.OnContextMenuOpening()
+							]
+							
 						]
 						
 					// Bottom Bar
@@ -312,50 +349,29 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 						]
 
 						+ SHorizontalBox::Slot()
-						.FillWidth(1)
-						[
-							// Checkbox wrapper
-							SNew(SHorizontalBox)
-							+ SHorizontalBox::Slot()
-							[
-								SNew(STextBlock)
-								.Text(LOCTEXT("TileViewCheckLabel", "Tile View"))
-							]
-
-							+ SHorizontalBox::Slot()
-							[
-								SNew(SCheckBox)
-							]
-							+ SHorizontalBox::Slot()
-							[
-								SNew(STextBlock)
-								.Text(LOCTEXT("ListViewCheckLabel", "List View"))
-							]
-
-							+ SHorizontalBox::Slot()
-							[
-								SNew(SCheckBox)
-							]
-						]
-
-						+ SHorizontalBox::Slot()
 							[
 								// Scale Slider
 								SNew(SHorizontalBox)
 								+ SHorizontalBox::Slot()
+								.Padding(FMargin(0, 3, 0, 0))
 								[
 									SNew(STextBlock)
 									.Text(LOCTEXT("ScaleSliderLabel", "Thumbnail Scale"))
+									.Justification(ETextJustify::Right)
 								]
 								+ SHorizontalBox::Slot()
 									[
-										SNew(SSlider)
+										SAssignNew(UserScaleSlider, SSlider)
+										.Value(TileUserScale)
+										.MinValue(0.2)
+										.OnValueChanged(this, &SLoaderWindow::OnThumbnailSliderValueChanged)
 									]
 							]
 					]
 					
 				] // ~ Close Center Area Splitter
 
+				// Metadata Zone
 				+ SSplitter::Slot()
 					.Value(0.2f)
 					[
@@ -421,18 +437,18 @@ void SLoaderWindow::PopulateBaseAssetList()
 	}
 }
 
+
 TSharedRef<ITableRow> SLoaderWindow::MakeTileViewWidget(TSharedPtr<FVaultMetadata> AssetItem, const TSharedRef<STableViewBase>& OwnerTable)
 {
-	// see asset thumbnail.cpp, line 1000 for thumbnail support
-
 	TSharedPtr<STableRow<TSharedPtr<FVaultMetadata>>> TableRowWidget;
+
 	SAssignNew(TableRowWidget, STableRow<TSharedPtr<FVaultMetadata>>, OwnerTable)
-		.Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow");
+		.Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
+		.Padding(FMargin(2.0f, 0.0f, 2.0f, 25.0f));
 
 
 	TSharedRef<SAssetTileItem> Item = SNew(SAssetTileItem)
-		.AssetItem(AssetItem)
-		.ItemWidth(this, &SLoaderWindow::GetTileViewItemWidth);
+		.AssetItem(AssetItem);
 
 	TableRowWidget->SetContent(Item);
 
@@ -456,17 +472,51 @@ TSharedRef<ITableRow> SLoaderWindow::MakeDeveloperFilterViewWidget(FDeveloperFil
 void SLoaderWindow::OnSearchBoxChanged(const FText& inSearchText)
 {
 
+	if (inSearchText.IsEmpty())
+	{
+		return;
+	}
+
+
+
+	FilteredAssetItems.Empty();
+	TArray<FVaultMetadata> MetaFiles;
+
+	MetaFiles = FMetadataOps::FindAllMetadataInLibrary();
+
+	// Store Strict Search - This controls if we only search pack name, or various data entries.
+	const bool bStrictSearch = StrictSearchCheckBox->GetCheckedState() == ECheckBoxState::Checked;
+
+	const FString SearchString = inSearchText.ToString();
+
+	for (FVaultMetadata Meta : MetaFiles)
+	{
+		if (Meta.PackName.ToString().Contains(SearchString))
+		{
+			FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Meta)));
+			continue;
+		}
+		
+		if (bStrictSearch == false)
+		{
+			if (Meta.Author.ToString().Contains(SearchString) || Meta.Description.Contains(SearchString))
+			{
+				FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Meta)));
+			}
+		}
+	}
+
+	TileView->RebuildList();
+	TileView->ScrollToTop();
+
 }
 
-float SLoaderWindow::GetTileViewItemBaseWidth() const
+void SLoaderWindow::OnThumbnailSliderValueChanged(float Value)
 {
-	return (TileViewThumbnailSize + TileViewThumbnailPadding * 2) * GetTileViewUserScale();// *FMath::Lerp(MinThumbnailScale, MaxThumbnailScale, GetThumbnailScale());
-}
-
-float SLoaderWindow::GetTileViewUserScale() const
-{
-	// # todo
-	return 1;
+	TileUserScale = Value;
+	TileView->SetItemWidth(TILE_BASE_WIDTH * TileUserScale);
+	TileView->SetItemHeight(TILE_BASE_HEIGHT * TileUserScale);
+	TileView->RebuildList();
 }
 
 FText SLoaderWindow::DisplayTotalAssetsInLibrary() const
@@ -479,11 +529,6 @@ FText SLoaderWindow::DisplayTotalAssetsInLibrary() const
 	return Display;
 }
 
-
-float SLoaderWindow::GetTileViewItemWidth() const
-{
-	return GetTileViewItemBaseWidth() * FillScale;
-}
 
 
 

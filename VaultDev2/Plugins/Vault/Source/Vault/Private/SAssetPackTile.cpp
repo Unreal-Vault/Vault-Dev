@@ -3,13 +3,18 @@
 #include "SAssetPackTile.h"
 
 #include "VaultSettings.h"
-
-#include "Slate.h"
-#include "SlateExtras.h"
-#include "Internationalization/BreakIterator.h"
+//#include "Slate.h"
+//#include "SlateExtras.h"
+#include "Internationalization\BreakIterator.h"
 #include "MetadataOps.h"
 #include "ImageUtils.h"
 #include "Engine/Texture2D.h"
+
+#include "Widgets/Layout/SScaleBox.h"
+#include "Widgets/Text/STextBlock.h"
+#include "Widgets/Images/SImage.h"
+#include "Widgets/Images/SThrobber.h"
+
 
 #define LOCTEXT_NAMESPACE "VaultListsDefinitions"
 
@@ -38,7 +43,7 @@ void SAssetListItem::Construct(const FArguments& InArgs)
 
 
 }
-
+END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 // -------------------- tile ---------------------------
 SAssetTileItem::SAssetTileItem()
@@ -60,57 +65,66 @@ void SAssetTileItem::Construct(const FArguments& InArgs)
 	);
 
 	ItemWidth = InArgs._ItemWidth;
-
+	;
+	
+	
 	FSlateBrush* ThumbBrush = new FSlateBrush();
 	TSharedRef<SWidget> ThumbnailWidget = CreateTileThumbnail(AssetItem, ThumbBrush);
-
-
 	
+	// Clear Old
+	this->ChildSlot [ SNullWidget::NullWidget ];
+	
+	TSharedPtr<SVerticalBox> StandardWidget =
+		SNew(SVerticalBox)
 
-	UE_LOG(LogTemp, Warning, TEXT("Asset Tile Processing (%s)"), *AssetItem->PackName.ToString());
-
-
-	ChildSlot
+		// Image Area
+		+SVerticalBox::Slot()
+		.HAlign(HAlign_Fill)
+		.VAlign(VAlign_Fill)
+		.FillHeight(0.9f)
+		.Padding(FMargin(0.0f, 3.0f, 0.0f, 0.0f))
 		[
-			SNew(SBorder)
-			.Padding(0)		
+			SNew(SScaleBox)
+			.Stretch(EStretch::ScaleToFit)
 			[
-				SNew(SVerticalBox)
+				// Optional Overlay Box to help additional meta later in pipe. 
+				SNew(SOverlay)
 
-				+ SVerticalBox::Slot()
-				.AutoHeight()
-				.HAlign(HAlign_Center)
+				+SOverlay::Slot()
+				.HAlign(HAlign_Fill)
+				.VAlign(VAlign_Fill)
 				[
-					SNew(SBox)
-					.Padding(5.0f)
-					.WidthOverride(this, &SAssetTileItem::GetThumbnailBoxSize)
-					.HeightOverride(this, &SAssetTileItem::GetThumbnailBoxSize)
-					[
-						SNew(SBorder)
-						.Padding(1.f)
-						[				
-							ThumbnailWidget
-						]
-					]
-				]
-
-				+ SVerticalBox::Slot()
-				.Padding(FMargin(1.f, 0))
-				.HAlign(HAlign_Center)
-				.VAlign(VAlign_Center)
-				.FillHeight(1.0f)
-				[
-		
-					SNew(STextBlock)
-					.Text(FText::FromName(InArgs._AssetItem->PackName.IsNone() ? TEXT("Pack") : AssetItem->PackName))
-					.LineBreakPolicy(FBreakIterator::CreateCamelCaseBreakIterator())
-		
-		
+					ThumbnailWidget
 				]
 			]
-		
+		]
+
+		// File Name
+		+SVerticalBox::Slot()
+		.AutoHeight()
+		[
+			SNew(SHorizontalBox)
+			+SHorizontalBox::Slot()
+			.HAlign(HAlign_Left)
+			.AutoWidth()
+			.Padding(FMargin(8.0f, 11.0f, 3.0f, 0.0f))
+				[
+					SNew(STextBlock)
+					.Text(FText::FromName(InArgs._AssetItem->PackName.IsNone() ? TEXT("Pack") : AssetItem->PackName))
+					.WrapTextAt(300)
+					.Justification(ETextJustify::Left)
+					//.TextStyle(F)
+				]
 		];
+		
+		ChildSlot
+		[
+			StandardWidget->AsShared()
+		];
+
+
 }
+END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
 FOptionalSize SAssetTileItem::GetThumbnailBoxSize() const
 {
@@ -130,7 +144,8 @@ TSharedRef<SWidget> SAssetTileItem::CreateTileThumbnail(TSharedPtr<FVaultMetadat
 		return SNew(SOverlay)
 			+ SOverlay::Slot()
 			[
-				SNew(SImage) .Image(FEditorStyle::GetDefaultBrush())
+				SNew(SImage) 
+				.Image(FEditorStyle::GetDefaultBrush())
 			];
 	}
 	
@@ -150,24 +165,16 @@ TSharedRef<SWidget> SAssetTileItem::CreateTileThumbnail(TSharedPtr<FVaultMetadat
 		[
 			SNew(SImage)
 			.Image(InBrush)
-
-		];
-
-	ItemContentsOverlay->AddSlot()
-		[
-			SNew(STextBlock)
-			.Justification(ETextJustify::Center)
-			.ColorAndOpacity(FSlateColor(FLinearColor::Green))
-			.Text(FText::FromName(Meta->PackName))
-
+			.OnMouseButtonDown(this, &SAssetTileItem::OnAssetTileClicked)
 		];
 
 	return ItemContentsOverlay;
-
-
 }
 
-
-
+FReply SAssetTileItem::OnAssetTileClicked(const FGeometry& Geom, const FPointerEvent& PointerEvent)
+{
+	// #todo
+	return FReply::Handled();
+}
 
 #undef LOCTEXT_NAMESPACE
