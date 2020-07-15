@@ -1,0 +1,28 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "4.25",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "VaultDev",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "Optim",
+			"Enabled": false
+		},
+		{
+			"Name": "LiveLink",
+			"Enabled": false
+		},
+		{
+			"Name": "ImageGenerator",
+			"Enabled": false,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/1531e384a30e4022911cfa31b2234d1c"
+		}
+	]
+}

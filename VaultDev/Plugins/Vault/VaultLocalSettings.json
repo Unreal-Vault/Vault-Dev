@@ -1,0 +1,8 @@
+{
+	"Version": "0.1.10",
+	"GlobalSettingsPath": "C:/Users/Daniel/Documents/Vault/VaultSettings.json",
+	"GlobalTagsPoolPath": "C:/Users/Daniel/Documents/Vault/VaultTags.json",
+	"ClearPackageListOnSuccessfulPackage": false,
+	"PackageListStoragePath": "C:/Users/Daniel/AppData/Local/Temp",
+	"PackageLogPath": "C:/Users/Daniel/AppData/Local/Temp"
+}
