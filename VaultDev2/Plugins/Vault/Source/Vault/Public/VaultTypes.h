@@ -9,27 +9,19 @@
 struct FVaultMetadata
 {
 	FName Author;
-
 	FName PackName;
-
 	FString Description;
-
 	TSet<FString> Tags;
-
 	TSoftObjectPtr<UTexture2DDynamic> Thumbnail;
 
 	FDateTime CreationDate;
-
 	FDateTime LastModified;
 
 	FString RelativePath;
-
 	FString MachineID;
-
 	TSet<FString> ObjectsInPack;
 
-
-
+	// Constructor
 	FVaultMetadata()
 	{
 		Author = NAME_None;
@@ -40,61 +32,23 @@ struct FVaultMetadata
 		RelativePath = FString();
 		MachineID = FString();
 	}
-
-	//FVaultMetadata(FVaultMetadata inMeta)
-	//{
-	//	Author = inMeta.Author;
-	//	PackName = inMeta.PackName;
-	//	Description = inMeta.Description;
-	//	CreationDate = inMeta.CreationDate;
-	//	LastModified = inMeta.LastModified;
-	//	RelativePath = inMeta.RelativePath;
-	//	MachineID = inMeta.MachineID;
-	//}
-
 };
 
-
-
+// Tag Filter Struct used for the Loader UI
 struct FTagFilteringItem
 {
-	FTagFilteringItem()
-
-	{
-	}
-
+	FTagFilteringItem() {}
 	virtual ~FTagFilteringItem() {}
-
 	FString Tag;
-
-	bool bFilterflag;
-
 	int UseCount;
-
 };
 
+// Developer Name Struct used for Loader UI
 struct FDeveloperFilteringItem
 {
-	FDeveloperFilteringItem()
-
-	{
-	}
-
+	FDeveloperFilteringItem() {}
 	virtual ~FDeveloperFilteringItem() {}
-
 	FName Developer;
-
 	bool bFilterflag;
-
 	int UseCount;
-
-};
-
-
-
-class VAULT_API VaultTypes
-{
-public:
-	VaultTypes();
-	~VaultTypes();
 };

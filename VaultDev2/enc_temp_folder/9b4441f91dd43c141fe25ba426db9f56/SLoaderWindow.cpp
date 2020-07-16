@@ -17,12 +17,14 @@ const int32 SLoaderWindow::THUMBNAIL_BASE_WIDTH = 415;
 const int32 SLoaderWindow::TILE_BASE_HEIGHT = 465;
 const int32 SLoaderWindow::TILE_BASE_WIDTH = 415;
 
+
 namespace VaultColumnNames
 {
 	static const FName TagCheckedColumnName(TEXT("Flag"));
 	static const FName TagNameColumnName(TEXT("Tag Name"));
 	static const FName TagCounterColumnName(TEXT("Used"));
 };
+
 
 class VAULT_API STagFilterRow : public SMultiColumnTableRow<FTagFilteringItemPtr>
 {

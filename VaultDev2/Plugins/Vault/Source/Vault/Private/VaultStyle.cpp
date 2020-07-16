@@ -11,6 +11,14 @@ TSharedPtr< FSlateStyleSet > FVaultStyle::StyleInstance = NULL;
 
 void FVaultStyle::Initialize()
 {
+
+
+
+
+
+
+
+
 	if (!StyleInstance.IsValid())
 	{
 		StyleInstance = Create();
