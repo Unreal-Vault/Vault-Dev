@@ -102,7 +102,7 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 	
 	// GLOBALS
 
-	TSet<FName> ActiveTagFilters;
+	TSet<FString> ActiveTagFilters;
 	TSet<FName> ActiveDevFilters;
 
 
@@ -110,6 +110,8 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 	TArray<FVaultMetadata> MetaFilesCache;
 
 	void RefreshAvailableFiles();
+
+	void UpdateFilteredAssets();
 
 	TArray<TSharedPtr<FVaultMetadata>> FilteredAssetItems;
 

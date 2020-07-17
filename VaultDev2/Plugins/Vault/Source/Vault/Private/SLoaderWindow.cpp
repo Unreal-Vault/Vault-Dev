@@ -508,17 +508,12 @@ TSharedRef<ITableRow> SLoaderWindow::MakeDeveloperFilterViewWidget(FDeveloperFil
 
 void SLoaderWindow::OnSearchBoxChanged(const FText& inSearchText)
 {
-	FilteredAssetItems.Empty();
+	//FilteredAssetItems.Empty();
 
-	// If its now empty, it was probably cleared or backspaced through, so we need to repopulate with everything again.
+	// If its now empty, it was probably cleared or backspaced through, so we need to reapply just the filter based results.
 	if (inSearchText.IsEmpty())
 	{
-		for (FVaultMetadata Meta : MetaFilesCache)
-		{
-			FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Meta)));
-		}
-		TileView->RebuildList();
-		TileView->ScrollToTop();
+		UpdateFilteredAssets();
 		return;
 	}
 
@@ -526,24 +521,29 @@ void SLoaderWindow::OnSearchBoxChanged(const FText& inSearchText)
 	const bool bStrictSearch = StrictSearchCheckBox->GetCheckedState() == ECheckBoxState::Checked;
 
 	const FString SearchString = inSearchText.ToString();
+	
+	// Holder for the newly filtered Results:
+	TArray<TSharedPtr<FVaultMetadata>> SearchMatchingEntries;
 
-	for (FVaultMetadata Meta : MetaFilesCache)
+	// Instead of searching raw meta, we search the filtered results, so this respects the tag and dev filters first, and we search within that.
+	for (auto Meta : FilteredAssetItems)
 	{
-		if (Meta.PackName.ToString().Contains(SearchString))
+		if (Meta->PackName.ToString().Contains(SearchString))
 		{
-			FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Meta)));
+			SearchMatchingEntries.Add(Meta);
 			continue;
 		}
 		
 		if (bStrictSearch == false)
 		{
-			if (Meta.Author.ToString().Contains(SearchString) || Meta.Description.Contains(SearchString))
+			if (Meta->Author.ToString().Contains(SearchString) || Meta->Description.Contains(SearchString))
 			{
-				FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Meta)));
+				SearchMatchingEntries.Add(Meta);
 			}
 		}
 	}
 
+	FilteredAssetItems = SearchMatchingEntries;
 	TileView->RebuildList();
 	TileView->ScrollToTop();
 
@@ -557,6 +557,44 @@ void SLoaderWindow::OnSearchBoxCommitted(const FText& InFilterText, ETextCommit:
 void SLoaderWindow::RefreshAvailableFiles()
 {
 	MetaFilesCache = FMetadataOps::FindAllMetadataInLibrary();
+}
+
+void SLoaderWindow::UpdateFilteredAssets()
+{
+	FilteredAssetItems.Empty();
+
+	// Special Condition to check if all boxes are cleared:
+	if (ActiveTagFilters.Num() == 0 && ActiveDevFilters.Num() == 0)
+	{
+		PopulateBaseAssetList();
+		TileView->RebuildList();
+		TileView->ScrollToTop();
+		return;
+	}
+
+	for (auto Asset : MetaFilesCache)
+	{
+		// Apply all filtered Tags
+		for (auto UserTag : Asset.Tags)
+		{
+			if (ActiveTagFilters.Contains(UserTag))
+			{
+				FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Asset)));
+				continue;
+			}
+		}
+
+		// Apply All Developer Tags
+		if (ActiveDevFilters.Contains(Asset.Author))
+		{
+			FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Asset)));
+			continue;
+		}
+	}
+
+	TileView->RebuildList();
+	TileView->ScrollToTop();
+
 }
 
 void SLoaderWindow::OnThumbnailSliderValueChanged(float Value)
@@ -576,74 +614,35 @@ FText SLoaderWindow::DisplayTotalAssetsInLibrary() const
 }
 
 
-
-
 void SLoaderWindow::ModifyActiveTagFilters(FString TagModified, bool bFilterThis)
 {
 	UE_LOG(LogVault, Display, TEXT("Enabling Tag Filter For %s"), *TagModified);
 	
-	FilteredAssetItems.Empty();
-
 	if (bFilterThis)
 	{
-		for (auto Asset : MetaFilesCache)
-		{
-			for (auto UserTag : Asset.Tags)
-			{
-				if (UserTag == TagModified)
-				{
-					FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Asset)));
-				}
-
-			}
-		}
-		
-		TileView->RebuildList();
-		TileView->ScrollToTop();
+		// Push our Active Tag into our Set of Tags currently being searched
+		ActiveTagFilters.Add(TagModified);
+		UpdateFilteredAssets();
 		return;
 	}
 
-	// Runs if unticked:
-	for (FVaultMetadata Meta : MetaFilesCache)
-	{
-		FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Meta)));
-	}
-	TileView->RebuildList();
-	TileView->ScrollToTop();
-
+	ActiveTagFilters.Remove(TagModified);
+	UpdateFilteredAssets();
 }
 
 void SLoaderWindow::ModifyActiveDevFilters(FName DevModified, bool bFilterThis)
 {
 	UE_LOG(LogVault, Display, TEXT("Enabling Dev Filter %s"), *DevModified.ToString());
 
-	// #todo This all works, for a single developer, and not respecting tags or search. Gotta find a cleaner way to make all this work together in a order of effect. Search > Tags > Dev?
-
-	FilteredAssetItems.Empty();
-
 	if (bFilterThis)
 	{
-
-		for (auto Asset : MetaFilesCache)
-		{
-			if (Asset.Author == DevModified)
-			{
-				FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Asset)));
-			}
-		}
-
-		TileView->RebuildList();
-		TileView->ScrollToTop();
+		ActiveDevFilters.Add(DevModified);
+		UpdateFilteredAssets();
 		return;
 	}
 
-	// Filtering Disabled, Add everything back in.
-	for (FVaultMetadata Meta : MetaFilesCache)
-	{
-		FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Meta)));
-	}
-	TileView->RebuildList();
-	TileView->ScrollToTop();
+	ActiveDevFilters.Remove(DevModified);
+	UpdateFilteredAssets();
 }
 
 #undef LOCTEXT_NAMESPACE
