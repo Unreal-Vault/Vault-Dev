@@ -16,10 +16,7 @@
 
 class VAULT_API SAssetPackItem : public SCompoundWidget
 {
-	SLATE_BEGIN_ARGS(SAssetPackItem)
-	{
-
-	}
+	SLATE_BEGIN_ARGS(SAssetPackItem) {}
 
 	/** Data for the asset this item represents */
 	SLATE_ARGUMENT(TSharedPtr<FVaultMetadata>, AssetItem)
@@ -27,11 +24,8 @@ class VAULT_API SAssetPackItem : public SCompoundWidget
 	SLATE_END_ARGS()
 
 	SAssetPackItem();
-
 	~SAssetPackItem();
-
 	TSharedPtr<FVaultMetadata> AssetItem;
-
 	void Construct(const FArguments& InArgs);
 
 };
@@ -67,13 +61,13 @@ private:
 	TAttribute<float> ItemWidth;
 };
 
+// Tile Child of SAssetPackItem
 class VAULT_API SAssetTileItem : public SAssetPackItem
 {
 public:
 
 	SLATE_BEGIN_ARGS(SAssetTileItem)
 		: _ItemWidth(16)
-	
 	{}
 
 	/** Item to use for populating */
@@ -92,8 +86,6 @@ public:
 
 	FOptionalSize GetThumbnailBoxSize() const;
 
-	//TSharedRef<SWidget> ItemContents = FAssetViewItemHelper::CreateTileItemContents(this, Thumbnail.ToSharedRef(), ItemShadowBorderName);
-
 	TSharedRef<SWidget> CreateTileThumbnail(TSharedPtr<FVaultMetadata> Meta, FSlateBrush* InBrush);
 
 	FReply OnAssetTileClicked(const FGeometry& Geom, const FPointerEvent& PointerEvent);
@@ -104,11 +96,4 @@ private:
 
 	TAttribute<float> ItemWidth;
 
-	
-
-
 };
-
-
-
-

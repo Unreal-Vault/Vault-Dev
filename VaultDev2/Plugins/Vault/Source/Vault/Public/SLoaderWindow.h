@@ -109,6 +109,7 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 	// Holder for all Meta files found during a file search. This is a cached version gathered on Construction, and can be updated with the RefreshAvailableFiles()
 	TArray<FVaultMetadata> MetaFilesCache;
 
+	// Force Refresh the File List. Does not call Redraw
 	void RefreshAvailableFiles();
 
 	void UpdateFilteredAssets();

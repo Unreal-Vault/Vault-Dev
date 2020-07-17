@@ -480,7 +480,7 @@ TSharedRef<ITableRow> SLoaderWindow::MakeTileViewWidget(TSharedPtr<FVaultMetadat
 	TSharedPtr<STableRow<TSharedPtr<FVaultMetadata>>> TableRowWidget;
 
 	SAssignNew(TableRowWidget, STableRow<TSharedPtr<FVaultMetadata>>, OwnerTable)
-		.Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
+		//.Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
 		.Padding(FMargin(2.0f, 0.0f, 2.0f, 25.0f));
 
 	TSharedRef<SAssetTileItem> Item = SNew(SAssetTileItem)
@@ -559,6 +559,7 @@ void SLoaderWindow::RefreshAvailableFiles()
 	MetaFilesCache = FMetadataOps::FindAllMetadataInLibrary();
 }
 
+// Applies the List of filters all together.
 void SLoaderWindow::UpdateFilteredAssets()
 {
 	FilteredAssetItems.Empty();
@@ -612,7 +613,6 @@ FText SLoaderWindow::DisplayTotalAssetsInLibrary() const
 	FText Display = FText::Format(LOCTEXT("displayassetcountlabel", "Total Assets in library: {0}"),assetCount);
 	return Display;
 }
-
 
 void SLoaderWindow::ModifyActiveTagFilters(FString TagModified, bool bFilterThis)
 {
