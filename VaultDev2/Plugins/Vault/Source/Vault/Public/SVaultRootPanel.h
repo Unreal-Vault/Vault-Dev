@@ -5,28 +5,12 @@
 #include "CoreMinimal.h"
 #include "VaultTypes.h"
 #include "Input/Reply.h"
-#include "Slate.h"
-#include "SlateExtras.h"
+#include "SlateFwd.h"
 
-
-/**
- * 
- */
-class VAULT_API OperationChoiceWindow
+class SVaultRootPanel : public SCompoundWidget
 {
-public:
-	OperationChoiceWindow();
-	~OperationChoiceWindow();
-};
-
-
-class SOperationsChoice : public SCompoundWidget
-{
-	SLATE_BEGIN_ARGS(SOperationsChoice)
-	{}
+	SLATE_BEGIN_ARGS(SVaultRootPanel) {}
 	SLATE_END_ARGS()
-
-	SOperationsChoice();
 
 	void Construct(const FArguments& InArgs, const TSharedRef<SDockTab>& ConstructUnderMajorTab, const TSharedPtr<SWindow>& ConstructUnderWindow);
 
@@ -37,15 +21,7 @@ private:
 	/** Callback for spawning tabs. */
 	TSharedRef<SDockTab> HandleTabManagerSpawnTab(const FSpawnTabArgs& Args, FName TabIdentifier) const;
 
-
-
 protected:
 
-	/**
- * Fills the Window menu with menu items.
- *
- * @param MenuBuilder The multi-box builder that should be filled with content for this pull-down menu.
- * @param TabManager A Tab Manager from which to populate tab spawner menu items.
- */
 	static void FillWindowMenu(FMenuBuilder& MenuBuilder, const TSharedPtr<FTabManager> TabManager);
 };
