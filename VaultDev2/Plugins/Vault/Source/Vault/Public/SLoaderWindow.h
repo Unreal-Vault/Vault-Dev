@@ -28,9 +28,6 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 	// On Tick
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
-	// Handle Map Change Safety
-	void HandleMapChange(UObject* Object);
-
 	// Populate the Base Asset Tree - No filtering Applied. Called on Construction
 	void PopulateBaseAssetList();
 
@@ -59,7 +56,6 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 	void OnAssetTileDoubleClicked(TSharedPtr<FVaultMetadata> InItem);
 
 	TSharedPtr<SWidget> OnAssetTileContextMenuOpened();
-
 	// ---- End Tables ----- //
 
 	

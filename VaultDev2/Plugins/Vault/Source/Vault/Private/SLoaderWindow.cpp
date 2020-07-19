@@ -413,20 +413,9 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 			LoaderRoot
 		];
 
-
-#if WITH_EDITOR
-	FEditorSupportDelegates::PrepareToCleanseEditorObject.AddRaw(this, &SLoaderWindow::HandleMapChange);
-#endif
-
-
 }
 
 void SLoaderWindow::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
-{
-
-}
-
-void SLoaderWindow::HandleMapChange(UObject* Object)
 {
 
 }
@@ -567,8 +556,6 @@ TSharedPtr<SWidget> SLoaderWindow::OnAssetTileContextMenuOpened()
 	
 	// Store our selected item for any future operations.
 	TSharedPtr<FVaultMetadata> SelectedAsset = TileView->GetSelectedItems()[0];
-
-
 
 	FMenuBuilder MenuBuilder(true, nullptr, nullptr, true);
 
