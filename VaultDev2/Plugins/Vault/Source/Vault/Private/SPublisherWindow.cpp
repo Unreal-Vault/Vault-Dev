@@ -41,23 +41,8 @@
 
 #define LOCTEXT_NAMESPACE "FVaultPublisher"
 
-SPublisherWindow::SPublisherWindow()
-{
-
-}
-
-SPublisherWindow::~SPublisherWindow()
-{
-#if WITH_EDITOR
-	FEditorSupportDelegates::PrepareToCleanseEditorObject.RemoveAll(this);
-#endif
-
-
-}
-
 void SPublisherWindow::Construct(const FArguments& InArgs)
 {
-
 	// Command List
 	CommandList = MakeShareable(new FUICommandList);
 
@@ -77,15 +62,9 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 	AssetPublisherDetailsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
 	AssetPublisherTagsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
 
-	//AssetPublisherTagsView->RegisterInstancedCustomPropertyLayout(UAssetPublisherTags::StaticClass(), FOnGetDetailCustomizationInstance::CreateStatic(&FAssetPublisherTagsCustomization::MakeInstance, WeakPtr));
-	//AssetPublisherTagsView->SetObject(GetMutableDefault<UAssetPublisherTags>());
-
 	AssetPublisherDetailsView->RegisterInstancedCustomPropertyLayout(UAssetPublisher::StaticClass(), FOnGetDetailCustomizationInstance::CreateStatic(&FAssetPublisherTagsCustomization::MakeInstance, WeakPtr));
 	AssetPublisherDetailsView->SetObject(GetMutableDefault<UAssetPublisher>());
 
-
-	//SetupMicroViewport();
-	
 	// Start UI
 	TSharedRef<SVerticalBox> MainVerticalBox = SNew(SVerticalBox)
 
@@ -225,6 +204,10 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 				SNew(SButton)
 				.OnClicked(this, &SPublisherWindow::TryPackage)
 				.Text(LOCTEXT("SubmitToVaultLabel", "Submit to Vault"))
+				.IsEnabled_Lambda([this]()
+				{
+					return CanPackage();
+				})
 			]
 
 		+ SVerticalBox::Slot()
@@ -252,24 +235,10 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 			MainVerticalBox
 		];
 
-
-#if WITH_EDITOR
-		FEditorSupportDelegates::PrepareToCleanseEditorObject.AddRaw(this, &SPublisherWindow::HandleMapUnload);
-#endif
-
-
 }
 
 void SPublisherWindow::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
-	//Super::Tick(AllottedGeometry, InCurrentTime, InDeltaTime);
-
-		
-	if (FApp::CanEverRender())
-	{
-		//ViewportScene->Draw(true);
-	}
-
 	if (bScreenshotRequested && ScreenshotFrameCounter < ScreenshotFrameTryForDuration)
 	{
 		ScreenshotFrameCounter++;
@@ -278,134 +247,37 @@ void SPublisherWindow::Tick(const FGeometry& AllottedGeometry, const double InCu
 			OnThumbnailReady();
 		}
 	}
-
-	
-}
-
-// Safely remove anything that might cause a crash when changing map
-void SPublisherWindow::HandleMapUnload(UObject* Object)
-{
-	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
-
-	if (EditorWorld == Object)
-	{
-		// When a map object is about to be GC'd we want to make sure the UI releases all references
-		// to anything that is owned by the scene.
-		//AssetPublisherDetailsView->SetObject(nullptr);
-		AssetPublisherTagsView->SetObject(nullptr);
-
-		// Force the list view to rebuild after clearing it's data source. This clears the list view's
-		// widget children. The ListView should only contain TWeakObjectPtrs but it's holding a hard
-		// reference anyways that's causes a gc leak on map change.
-		/*FSequenceRecorder::Get().ClearQueuedRecordings();
-		ActorListView->RebuildList();
-		for (TSharedPtr<SListView<USequenceRecordingBase*>>& ListView : ExtenderListViews)
-		{
-			ListView->RebuildList();
-		}*/
-
-		// We also want to construct a new mutable default so it resets the recording paths to the
-		// default paths for the new map.
-		//RecordingGroupDetailsView->SetObject(GetMutableDefault<USequenceRecorderActorGroup>());
-		//AssetPublisherDetailsView->SetObject(GetMutableDefault<UAssetPublisher>());
-		AssetPublisherTagsView->SetObject(GetMutableDefault<UAssetPublisherTags>());
-	}
-
-}
-
-void SPublisherWindow::UpdateRelativePathMetadata(const FText& InText, ETextCommit::Type CommitMethod)
-{
-	//AssetPublishMetadata.RelativePath
-}
-
-UTextureRenderTarget2D* SPublisherWindow::CaptureThumbnailViaScreencapture()
-{
-	// #todo
-
-	//FLevelEditorModule& LevelEditor = FModuleManager::GetModuleChecked<FLevelEditorModule>(TEXT("LevelEditor"));
-
-	//LevelEditor->GetFirstActiveViewport()-
-	return nullptr;
 }
 
 FReply SPublisherWindow::StartScreenshotCapture()
 {
-//	
-	//GEditor->GameViewport->OnScreenshotCaptured().AddRaw(this, &SPublisherWindow::OnThumbnailCaptured);
 	const FString OutputDirectory = FVaultSettings::Get().GetAssetLibraryRoot();
-
 	const FString TempName = TEXT("Temp.png");
 
+	FString FilePathAbsolute = OutputDirectory / TempName;
+	FPaths::NormalizeFilename(FilePathAbsolute);
 
-	FString path = OutputDirectory / TempName;
-	FPaths::NormalizeFilename(path);
+	FHighResScreenshotConfig& HighResScreenshotConfig = GetHighResScreenshotConfig();
 
-
-	//FImageUtils::CreateTexture2D()
-	//FImageUtils::ImportFileAsTexture2D()
-
-
-	//.Image(FEditorStyle::GetBrush("HighresScreenshot.Capture"))
-	//FUnrealClient::
-
-	GetHighResScreenshotConfig().SetResolution(512, 512, 1.0f);
-	GetHighResScreenshotConfig().FilenameOverride = path;
-	//FScreenshotRequest::RequestScreenshot(path, false, false);
+	HighResScreenshotConfig.SetResolution(512, 512, 1.0f);
+	HighResScreenshotConfig.FilenameOverride = FilePathAbsolute;
 	GEditor->TakeHighResScreenShots();
 
-	OnThumbnailCaptured(path);
-
-	//const FVector2D TextureSize = FVector2D(256.0, 256.0);
-
-	//ThumbBrush.SetResourceObject(Tex);
-	//ThumbBrush.ImageSize = TextureSize;
-	//ThumbBrush.DrawAs = ESlateBrushDrawType::Image;
-
-	//ThumbnailImage->SetImage(&ThumbBrush);
-
-	
-
-	//FLevelEditorModule& LevelEditor = FModuleManager::GetModuleChecked<FLevelEditorModule>(LevelEditorModName);
-	//LevelEditor.
-
-	
-
-	/*FTexture2DDynamicCreateInfo info;
-	info.bSRGB = true;
-	info.
-	TArray<FColor> col;
-	UTexture2DDynamic* img = UTexture2DDynamic(col);
-
-	viewport.onscreenshotcaptured*/
+	// Screenshot needs a bit of time to be ready, so we start checking on tick for when its become available.
+	ScreenshotFrameCounter = 0;
+	LastScreenshotPath = FilePathAbsolute;
+	bScreenshotRequested = true;
 
 	return FReply::Handled();
-
 }
 
 FSlateBrush SPublisherWindow::ConvertRenderTargetToSlateBrush()
 {
 	ImageSlateBrush = nullptr;
-	//FSlateBrush NewBrush(ESlateBrushDrawType::Image, "ThumbnailBrush", FMargin::Bottom, ESlateBrushTileType::NoTile, ESlateBrushImageType::FullColor, FVector2D(ChosenThumbnail->SizeX, ChosenThumbnail->SizeY));
 	FSlateBrush NewBrush;
 	NewBrush.SetResourceObject(ChosenThumbnail);
 	ImageSlateBrush = &NewBrush;
-
 	return *ImageSlateBrush;
-}
-
-
-void SPublisherWindow::OnThumbnailCaptured(FString Path)
-{
-	ScreenshotFrameCounter = 0;
-	LastScreenshotPath = Path;
-	bScreenshotRequested = true;
-	//FCreateTexture2DParameters OutParams;
-	//UTexture2D* MyTex = FImageUtils::CreateTexture2D(Width, Height, Colors, GetTransientPackage(), "ThumbTex", EObjectFlags::RF_Transient, OutParams);
-
-
-
-
-	
 }
 
 void SPublisherWindow::OnThumbnailReady()
@@ -416,20 +288,15 @@ void SPublisherWindow::OnThumbnailReady()
 	if (ThumbTexture2D)
 	{
 		const FVector2D TextureSize = FVector2D(256.0, 256.0);
-
 		ThumbBrush.SetResourceObject(ThumbTexture2D);
 		ThumbBrush.ImageSize = TextureSize;
 		ThumbBrush.DrawAs = ESlateBrushDrawType::Image;
-
-		//ThumbnailImage->SetImage(&ThumbBrush);
-
-
+		bHasValidScreenshot = true;
 	}
 }
 
 UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
 {
-
 	FViewport* Viewport = GEditor->GetActiveViewport();
 
 	if (!ensure(GCurrentLevelEditingViewportClient || !ensure(Viewport)))
@@ -456,7 +323,7 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
 	}
 
 	TArray<FColor> ScaledBitmap;
-	FImageUtils::CropAndScaleImage(SrcWidth, SrcHeight, 128, 128, OrigBitmap, ScaledBitmap);
+	FImageUtils::CropAndScaleImage(SrcWidth, SrcHeight, 512, 512, OrigBitmap, ScaledBitmap);
 
 	// Redraw viewport to restore highlight
 	GCurrentLevelEditingViewportClient = OldViewportClient;
@@ -473,7 +340,6 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
 		return ResizedTexture;
 	}
 	return nullptr;
-
 }
 
 UTexture2D* SPublisherWindow::CreateThumbnailFromFile()
@@ -590,11 +456,6 @@ FReply SPublisherWindow::TryPackage()
 	return FReply::Handled();
 }
 
-void SPublisherWindow::UpdateDependanciesList()
-{
-
-}
-
 void SPublisherWindow::OnPrimaryAssetListChanged()
 {
 	AddSelectedToList();
@@ -612,7 +473,6 @@ FReply SPublisherWindow::AddSelectedToList()
 	FText PriorText = PrimaryAssetsBox->GetText();
 	FString NewText = PriorText.ToString();
 
-
 	FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
 	TArray<FAssetData> SelectedAssets;
 	ContentBrowserModule.Get().GetSelectedAssets(SelectedAssets);
@@ -626,14 +486,8 @@ FReply SPublisherWindow::AddSelectedToList()
 		SecondaryResult.Append(GetAssetDependancies((AssetData.PackageName)));
 	}
 	
-	
-	//const UAssetPublisher* APPtr = GetDefault<UAssetPublisher>();
-
-
 	PrimaryAssetsBox->SetText(FText::FromName(GetDefault<UAssetPublisher>()->PrimaryAsset->GetFName()));
-
 	
-	//PrimaryAssetsBox->SetText(LOCTEXT("supermp", "Test New Text"));
 	PrimaryAssetsBox->Refresh();
 
 	FString SecondaryAssetsBoxText;
@@ -663,46 +517,6 @@ TArray<FString> SPublisherWindow::GetAssetDependancies(const FName AssetPath) co
 
 }
 
-void SPublisherWindow::SetupMicroViewport()
-{
-	ViewportClient = NewObject<UGameViewportClient>(GEngine, UGameViewportClient::StaticClass());
-
-	ViewportWorld = UWorld::CreateWorld(EWorldType::Editor, true);
-	GEngine->DestroyWorldContext(ViewportWorld);
-
-
-	TSharedPtr<SOverlay> ViewportOverlayWidget = SNew(SOverlay);
-	
-	TSharedRef<SGameLayerManager> LayerManagerRef = SNew(SGameLayerManager)
-		.SceneViewport(ViewportClient->GetGameViewport())
-		.Visibility(EVisibility::Visible)
-		[
-			ViewportOverlayWidget.ToSharedRef()
-		];
-
-
-	ViewportWidget = SNew(SViewport)
-		.RenderDirectlyToWindow(false)
-		[
-			LayerManagerRef
-		];
-
-	
-	ViewportScene = MakeShareable(new FSceneViewport(ViewportClient, ViewportWidget));
-	ViewportWidget->SetViewportInterface(ViewportScene.ToSharedRef());
-	
-	ViewportClient->SetGameLayerManager(LayerManagerRef);
-	
-	ViewportClient->Viewport = ViewportScene.Get();
-	
-
-
-	//ViewportScene = MakeShareable(new FSceneViewport(GEngine->GameViewport, ViewportWidget));
-	//ViewportWidget->SetViewportInterface(ViewportScene.ToSharedRef());
-
-
-}
-
 FText SPublisherWindow::GetSecondaryAssetList() const
 {
 	TSoftObjectPtr<UObject> Asset = GetMutableDefault<UAssetPublisher>()->PrimaryAsset;
@@ -710,8 +524,6 @@ FText SPublisherWindow::GetSecondaryAssetList() const
 	if (Asset)
 	{
 		FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>("AssetRegistry");
-		//AssetRegistryModule.Get().
-		//Asset.ToStringToSoftObjectPath();
 		FAssetData AssetPublisherData;
 		UAssetManager::GetIfValid()->GetAssetDataForPath(Asset.ToSoftObjectPath(), AssetPublisherData);
 
@@ -728,6 +540,12 @@ FText SPublisherWindow::GetSecondaryAssetList() const
 		return FText::FromString(FormattedList);
 	}
 	return FText::GetEmpty();
+}
+
+bool SPublisherWindow::CanPackage()
+{
+	// #todo Currently only check pack name, should check more like screenshot and other details. Enforce some rules!
+	return AssetPublishMetadata.PackName.IsNone() == false && bHasValidScreenshot;
 }
 
 FText SPublisherWindow::GetPrimaryAssetList() const
@@ -773,21 +591,10 @@ void SPublisherWindow::UpdateLastModifiedMetadata(const FText& InText, ETextComm
 	AssetPublishMetadata.LastModified = FDateTime::UtcNow();
 }
 
-void SPublisherWindow::UpdateCreationDateMetadata(const FText& InText, ETextCommit::Type CommitMethod)
-{
-	// all temp and not part of this
-	
-
-
-
-}
-
-
-
-void SPublisherWindow::UpdateAuthorMetadata(const FText& InText, ETextCommit::Type CommitMethod)
-{
-	//AssetPublishMetadata.Author = InText;
-}
+//void SPublisherWindow::UpdateAuthorMetadata(const FText& InText, ETextCommit::Type CommitMethod)
+//{
+//	//AssetPublishMetadata.Author = InText;
+//}
 
 void SPublisherWindow::UpdateUserInputMetadata()
 {
