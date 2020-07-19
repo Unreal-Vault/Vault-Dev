@@ -605,8 +605,8 @@ TSharedPtr<SWidget> SLoaderWindow::OnAssetTileContextMenuOpened()
 		MenuBuilder.AddMenuEntry(LOCTEXT("ACM_DeleteVaultAssetLabel", "Delete Asset"), FText::GetEmpty(), FSlateIcon(),
 			FUIAction(FExecuteAction::CreateLambda([this, SelectedAsset]()
 				{
-					// Open a Msg dialog to confirm deletion
-					const EAppReturnType::Type Confirmation = FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("DeleteViaContextMsg", "Are you sure you want to delete this asset from the Vault Library \nThis option cannot be undone." ));
+					// Open a Msg dialogue to confirm deletion
+					const EAppReturnType::Type Confirmation = FMessageDialog::Open(EAppMsgType::YesNo, LOCTEXT("DeleteViaContextMsg", "Are you sure you want to delete this asset from the Vault Library. \nThis option cannot be undone." ));
 					if (Confirmation == EAppReturnType::Yes)
 					{
 						// Delete Pack. Handles all the UI stuff from here as well as the file deletes.
@@ -760,6 +760,7 @@ void SLoaderWindow::ConstructMetadataWidget(TSharedPtr<FVaultMetadata> AssetMeta
 
 void SLoaderWindow::LoadAssetPackIntoProject(TSharedPtr<FVaultMetadata> InPack)
 {
+
 	// Root Directory
 	const FString LibraryPath = FVaultSettings::Get().GetAssetLibraryRoot();
 

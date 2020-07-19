@@ -118,6 +118,8 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 
 	void LoadAssetPackIntoProject(TSharedPtr<FVaultMetadata> InPack);
 
+	void DeleteAssetPack(TSharedPtr<FVaultMetadata> InPack);
+
 	TSet<FString> ActiveTagFilters;
 	TSet<FName> ActiveDevFilters;
 

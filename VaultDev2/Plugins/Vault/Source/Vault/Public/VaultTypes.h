@@ -37,7 +37,25 @@ struct FVaultMetadata
 	{
 		return PackName != NAME_None;
 	}
+
+	bool operator==(const FVaultMetadata& V) const;
 };
+
+FORCEINLINE uint32 GetTypeHash(const FVaultMetadata& V)
+{
+	const FString ComboString = V.PackName.ToString() + V.Author.ToString() + V.Description + V.CreationDate.ToString();
+	return GetTypeHash(ComboString);
+}
+
+FORCEINLINE bool FVaultMetadata::operator==(const FVaultMetadata& V) const
+{
+	return
+		Author == V.Author &&
+		PackName == V.PackName &&
+		Description == V.Description &&
+		CreationDate == V.CreationDate &&
+		LastModified == V.LastModified;
+}
 
 // Tag Filter Struct used for the Loader UI
 struct FTagFilteringItem
