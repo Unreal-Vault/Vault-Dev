@@ -10,7 +10,14 @@
 #include "VaultTypes.h"
 #include "SAssetPackTile.h"
 #include <EditorStyleSet.h>
+
+#include "PakFileUtilities.h"
+#include "EditorFramework/AssetImportData.h"
+#include "AssetImportTask.h"
+#include "AssetToolsModule.h"
+
 #include "VaultStyle.h"
+
 
 #define LOCTEXT_NAMESPACE "SVaultLoader"
 
@@ -725,6 +732,31 @@ void SLoaderWindow::ConstructMetadataWidget(TSharedPtr<FVaultMetadata> AssetMeta
 			SNew(STextBlock)
 			.Text(FText::Format(LOCTEXT("Meta_FilesLbl", "Files: {0}"), FText::FromString(FString::Join(AssetMeta->ObjectsInPack.Array(), TEXT(",")))))
 		];
+
+}
+
+void SLoaderWindow::LoadAssetPackIntoProject(TSharedPtr<FVaultMetadata> InPack)
+{
+	// #todo We could split the pak functions to their own static library some time.
+
+	//FString UnpackCommand = "Extract";
+	//  Expected: -Extract <PakFile> <OutputPath> [-responsefile=<outputresponsefilename> -order=<outputordermap>]"));
+
+
+	// UPacks import natively with Unreal, so no need to try to use the PakUtilities, better to use the native importer and let Unreal handle the Pak concepts. 
+	FAssetToolsModule& AssetToolsModule = FModuleManager::Get().LoadModuleChecked<FAssetToolsModule>("AssetTools");
+
+	UAssetImportTask* Task = NewObject<UAssetImportTask>();
+	Task->AddToRoot();
+	Task->bAutomated = true;
+	Task->bReplaceExisting = true;
+	Task->bSave = true;
+	Task->Filename = "C:\Users\Daniel\Documents\Vault\Lister.upack";
+
+	TArray<UAssetImportTask*> Tasks;
+	Tasks.Add(Task);
+
+	AssetToolsModule.Get().ImportAssetTasks(Tasks);
 
 }
 
