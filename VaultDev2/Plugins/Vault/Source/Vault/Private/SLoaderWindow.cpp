@@ -513,7 +513,7 @@ TSharedRef<ITableRow> SLoaderWindow::MakeTileViewWidget(TSharedPtr<FVaultMetadat
 {
 	return SNew(STableRow<TSharedPtr<FVaultMetadata>>, OwnerTable)
 		.Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
-		.Padding(FMargin(2.0f, 0.0f, 2.0f, 25.0f))
+		.Padding(FMargin(5.0f, 5.0f, 5.0f, 25.0f))
 		[
 			SNew(SAssetTileItem)
 			.AssetItem(AssetItem)
@@ -552,6 +552,7 @@ void SLoaderWindow::OnAssetTileSelectionChanged(TSharedPtr<FVaultMetadata> InIte
 void SLoaderWindow::OnAssetTileDoubleClicked(TSharedPtr<FVaultMetadata> InItem)
 {
 	// #todo Add Item to Project on Double Click
+	LoadAssetPackIntoProject(InItem);
 }
 
 TSharedPtr<SWidget> SLoaderWindow::OnAssetTileContextMenuOpened()
@@ -743,20 +744,82 @@ void SLoaderWindow::LoadAssetPackIntoProject(TSharedPtr<FVaultMetadata> InPack)
 	//  Expected: -Extract <PakFile> <OutputPath> [-responsefile=<outputresponsefilename> -order=<outputordermap>]"));
 
 
+	const FString LibraryPath = FVaultSettings::Get().GetAssetLibraryRoot();
+
+	// #todo this seems like a long winded approach, but in the interest of getting it working, lets visit all the files again to grab the pack we need. However since we got this info earlier, theres probably a better way to store this when we cache the metdata!
+
+	TArray<FVaultMetadata> MetaList;
+
+	// Our custom file visitor that seeks out .meta files
+	class FFindPackFilesVisitor : public IPlatformFile::FDirectoryVisitor
+	{
+	public:
+
+		FFindPackFilesVisitor() {}
+		TArray<FString> PackFilePathAbsolute;
+		TArray<FString> PackFileNameClean;
+
+		virtual bool Visit(const TCHAR* FilenameOrDirectory, bool bIsDirectory)
+		{
+			if (!bIsDirectory)
+			{
+				FString VisitedFile(FilenameOrDirectory);
+
+				if (FPaths::GetExtension(VisitedFile) == TEXT("upack"))
+				{
+					PackFileNameClean.Add(FPaths::GetBaseFilename(VisitedFile, true));
+					PackFilePathAbsolute.Add(VisitedFile);
+				}
+			}
+			return true;
+		}
+	};
+
+	FFindPackFilesVisitor Visitor;
+
+	// Iterate Dir. Visitor will populate with the info we need.
+	IFileManager::Get().IterateDirectory(*LibraryPath, Visitor);
+
+
+	FString FileToLoad;
+	bool bFoundFile = false;
+
+	// Loop through all meta files we found. Use simple for to have a index
+	for (int i = 0; i < Visitor.PackFileNameClean.Num(); i++)
+	{
+		if (Visitor.PackFileNameClean[i] == InPack->PackName.ToString())
+		{
+			FileToLoad = Visitor.PackFilePathAbsolute[i];
+			bFoundFile = true;
+			break;
+		}
+	}
+
+	if (!bFoundFile)
+	{
+		return;
+	}
+
+	FPaths::NormalizeFilename(FileToLoad);
+
 	// UPacks import natively with Unreal, so no need to try to use the PakUtilities, better to use the native importer and let Unreal handle the Pak concepts. 
 	FAssetToolsModule& AssetToolsModule = FModuleManager::Get().LoadModuleChecked<FAssetToolsModule>("AssetTools");
+
 
 	UAssetImportTask* Task = NewObject<UAssetImportTask>();
 	Task->AddToRoot();
 	Task->bAutomated = true;
 	Task->bReplaceExisting = true;
 	Task->bSave = true;
-	Task->Filename = "C:\Users\Daniel\Documents\Vault\Lister.upack";
+	Task->Filename = FileToLoad;
+	Task->DestinationPath = "/Game";
 
 	TArray<UAssetImportTask*> Tasks;
 	Tasks.Add(Task);
 
 	AssetToolsModule.Get().ImportAssetTasks(Tasks);
+
+	Task->RemoveFromRoot();
 
 }
 
