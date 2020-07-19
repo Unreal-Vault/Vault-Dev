@@ -557,6 +557,19 @@ void SLoaderWindow::OnAssetTileDoubleClicked(TSharedPtr<FVaultMetadata> InItem)
 
 TSharedPtr<SWidget> SLoaderWindow::OnAssetTileContextMenuOpened()
 {
+
+	// Lets check we have stuff selected, we only want the context menu on selected items. No need to open on a blank area
+	
+	if (TileView->GetNumItemsSelected() == 0)
+	{
+		return SNullWidget::NullWidget;
+	}
+	
+	// Store our selected item for any future operations.
+	TSharedPtr<FVaultMetadata> SelectedAsset = TileView->GetSelectedItems()[0];
+
+
+
 	FMenuBuilder MenuBuilder(true, nullptr, nullptr, true);
 
 	static const FName FilterSelectionHook("AssetContextMenu");
@@ -564,9 +577,9 @@ TSharedPtr<SWidget> SLoaderWindow::OnAssetTileContextMenuOpened()
 	MenuBuilder.BeginSection(FilterSelectionHook, LOCTEXT("AssetContextMenuLabel", "Vault Asset"));
 	{
 		MenuBuilder.AddMenuEntry(LOCTEXT("ACM_AddToProjectLabel", "Add To Project"), FText::GetEmpty(), FSlateIcon(), 
-			FUIAction(FExecuteAction::CreateLambda([this]()
+			FUIAction(FExecuteAction::CreateLambda([this, SelectedAsset]()
 				{
-					// #todo make it do something!
+					LoadAssetPackIntoProject(SelectedAsset);
 				
 				}), 
 				FCanExecuteAction(),
@@ -577,6 +590,8 @@ TSharedPtr<SWidget> SLoaderWindow::OnAssetTileContextMenuOpened()
 		MenuBuilder.AddMenuEntry(LOCTEXT("ACM_EditVaultAssetDetailsLabel", "Edit Asset"), FText::GetEmpty(), FSlateIcon(),
 			FUIAction(FExecuteAction::CreateLambda([this]()
 				{
+					
+					//FGenericPlatformProcess::LaunchFileInDefaultExternalApplication();
 					// #todo make it do something!
 
 				}),
@@ -738,12 +753,8 @@ void SLoaderWindow::ConstructMetadataWidget(TSharedPtr<FVaultMetadata> AssetMeta
 
 void SLoaderWindow::LoadAssetPackIntoProject(TSharedPtr<FVaultMetadata> InPack)
 {
-	// #todo We could split the pak functions to their own static library some time.
 
-	//FString UnpackCommand = "Extract";
-	//  Expected: -Extract <PakFile> <OutputPath> [-responsefile=<outputresponsefilename> -order=<outputordermap>]"));
-
-
+	// Root Directory
 	const FString LibraryPath = FVaultSettings::Get().GetAssetLibraryRoot();
 
 	// #todo this seems like a long winded approach, but in the interest of getting it working, lets visit all the files again to grab the pack we need. However since we got this info earlier, theres probably a better way to store this when we cache the metdata!
@@ -800,6 +811,11 @@ void SLoaderWindow::LoadAssetPackIntoProject(TSharedPtr<FVaultMetadata> InPack)
 		return;
 	}
 
+	// All files live in same directory, so we just do some string mods to get the pack file that matches the meta file.
+	const FString AssetToImportTemp = LibraryPath / InPack->PackName.ToString() + ".upack";
+
+
+
 	FPaths::NormalizeFilename(FileToLoad);
 
 	// UPacks import natively with Unreal, so no need to try to use the PakUtilities, better to use the native importer and let Unreal handle the Pak concepts. 
@@ -811,7 +827,7 @@ void SLoaderWindow::LoadAssetPackIntoProject(TSharedPtr<FVaultMetadata> InPack)
 	Task->bAutomated = true;
 	Task->bReplaceExisting = true;
 	Task->bSave = true;
-	Task->Filename = FileToLoad;
+	Task->Filename = AssetToImportTemp;
 	Task->DestinationPath = "/Game";
 
 	TArray<UAssetImportTask*> Tasks;

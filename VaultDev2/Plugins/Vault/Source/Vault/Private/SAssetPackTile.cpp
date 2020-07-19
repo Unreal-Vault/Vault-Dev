@@ -77,7 +77,7 @@ void SAssetTileItem::Construct(const FArguments& InArgs)
 			.Padding(FMargin(8.0f, 11.0f, 3.0f, 0.0f))
 				[
 					SNew(STextBlock)
-					.Text(FText::FromName(InArgs._AssetItem->PackName.IsNone() ? TEXT("Pack") : AssetItem->PackName))
+					.Text(FText::FromName(InArgs._AssetItem->PackName.IsNone() ? TEXT("Unknown Pack") : AssetItem->PackName))
 					.WrapTextAt(300)
 					.Justification(ETextJustify::Left)
 					//.TextStyle(F)
@@ -109,28 +109,26 @@ TSharedRef<SWidget> SAssetTileItem::CreateTileThumbnail(TSharedPtr<FVaultMetadat
 			];
 	}
 	
-	UTexture2D* ThumbTexture2D = FImageUtils::ImportFileAsTexture2D(Filepath);
+	UTexture2D* ThumbTexture = FImageUtils::ImportFileAsTexture2D(Filepath);
+	ThumbTexture->SetFlags(RF_Standalone);
 
-	ThumbnailBrush = MakeShareable(new FSlateBrush());
+	Brush = MakeShareable(new FSlateBrush());
 
-	if (ThumbTexture2D)
+	if (ThumbTexture)
 	{
-		ThumbnailBrush->SetResourceObject(ThumbTexture2D);
-		ThumbnailBrush->DrawAs = ESlateBrushDrawType::Image;
-		TextureResource = ThumbnailBrush->GetResourceObject();
+		Brush->SetResourceObject(ThumbTexture);
+		Brush->DrawAs = ESlateBrushDrawType::Image;
+		TextureResource = Brush->GetResourceObject();
 
 	}
 
-	TSharedRef<SOverlay> ItemContentsOverlay = SNew(SOverlay);
-
-	ItemContentsOverlay->AddSlot()
+	return SNew(SOverlay)
+		+ SOverlay::Slot()
 		[
 			SNew(SImage)
-			.Image(ThumbnailBrush.Get())
+			.Image(Brush.Get())
 			.Visibility(EVisibility::SelfHitTestInvisible)
 		];
-
-	return ItemContentsOverlay;
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -35,7 +35,7 @@ private:
 	TSharedPtr<FVaultMetadata> AssetItem;
 
 	// Holds the Thumbnail Brush (SlateBrush)
-	TSharedPtr<FSlateBrush> ThumbnailBrush;
+	TSharedPtr<FSlateBrush> Brush;
 
 	/** Stores our resource for the texture used to clear that flags that keep it from GC */
 	UObject* TextureResource;
