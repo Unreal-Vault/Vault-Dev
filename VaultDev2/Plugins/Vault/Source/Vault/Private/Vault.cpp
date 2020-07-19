@@ -1,16 +1,15 @@
 // Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
 
 #include "Vault.h"
+
 #include "VaultTypes.h"
 #include "VaultStyle.h"
-#include "VaultCommands.h"
 #include "Misc/MessageDialog.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
-#include "OperationChoiceWindow.h"
+#include "SVaultRootPanel.h"
 #include "MainFrame/Public/Interfaces/IMainFrameModule.h"
 #include "VaultSettings.h"
 #include "SPublisherWindow.h"
-#include "AssetLoader.h"
 #include "AssetPublisher.h"
 
 #include "LevelEditor.h"
@@ -20,64 +19,85 @@ static const FName VaultPublisherName("VaultPublisher");
 static const FName VaultLoaderName("VaultLoader");
 
 #define LOCTEXT_NAMESPACE "FVaultModule"
+
+// Create our Custom Log Category
 DEFINE_LOG_CATEGORY(LogVault);
+
+class FVaultCommands : public TCommands<FVaultCommands>
+{
+public:
+	FVaultCommands()
+		: TCommands<FVaultCommands>(
+			TEXT("Vault"),
+			LOCTEXT("Vault", "Vault Plugin"),
+			NAME_None,
+			FVaultStyle::GetStyleSetName())
+	{}
+
+	virtual void RegisterCommands() override;
+	TSharedPtr< FUICommandInfo > PluginAction;
+};
+
+
+// Create and Register our Commands. We only use the one so no need for a separate cpp/h file.
+void FVaultCommands::RegisterCommands()
+{
+	UI_COMMAND(PluginAction, "Vault", "Open the Vault", EUserInterfaceActionType::Button, FInputGesture());
+}
+
 
 void FVaultModule::StartupModule()
 {
-	// This code will execute after your module is loaded into memory
-	
+	// Init our styles
 	FVaultStyle::Initialize();
+
+	// Reload Textures
 	FVaultStyle::ReloadTextures();
 
+	// Register our Vault Commands into the Engine
 	FVaultCommands::Register();
 
+	// Init the Settings system
 	FVaultSettings::Get().Initialize();
 
 
-	
 	PluginCommands = MakeShareable(new FUICommandList);
 
 	PluginCommands->MapAction(
 		FVaultCommands::Get().PluginAction,
 		FExecuteAction::CreateRaw(this, &FVaultModule::SpawnOperationsTab),
 		FCanExecuteAction());
-		
+	
+	// Store a Ref to the Level Editor.
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	
 	{
 		TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender());
 		MenuExtender->AddMenuExtension("WindowLayout", EExtensionHook::After, PluginCommands, FMenuExtensionDelegate::CreateRaw(this, &FVaultModule::AddMenuExtension));
-
 		LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
 	}
 	
 	{
 		TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
 		ToolbarExtender->AddToolBarExtension("Settings", EExtensionHook::After, PluginCommands, FToolBarExtensionDelegate::CreateRaw(this, &FVaultModule::AddToolbarExtension));
-		
 		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
 	}
 
 	// Setup Operations Tab
-	const FText OperationsWindowTitle = LOCTEXT("OperationsWindowTitleLabel", "Vault");
-	const FText VaultWindowTooltip = LOCTEXT("VaultWindowTooltipLabel", "Vault Operations");
-
+	const FText VaultBasePanelWindowTitle = LOCTEXT("OperationsWindowTitleLabel", "The Vault");
+	const FText VaultBasePanelWindowTooltip = LOCTEXT("VaultWindowTooltipLabel", "Vault Operations");
 
 	// Init tabs
 	TSharedRef<FGlobalTabmanager> TabManager = FGlobalTabmanager::Get();
 
 	TabManager->RegisterNomadTabSpawner(VaultTabName, FOnSpawnTab::CreateRaw(this, &FVaultModule::SpawnOperationTab))
-		.SetDisplayName(OperationsWindowTitle)
-		.SetTooltipText(VaultWindowTooltip);
-
-
+		.SetDisplayName(VaultBasePanelWindowTitle)
+		.SetTooltipText(VaultBasePanelWindowTooltip);
 
 }
 
 void FVaultModule::ShutdownModule()
 {
-	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-	// we call this function before unloading the module.
 	FVaultStyle::Shutdown();
 
 	FVaultCommands::Unregister();
@@ -88,14 +108,8 @@ void FVaultModule::ShutdownModule()
 
 void FVaultModule::SpawnOperationsTab()
 {
-
-
 	TSharedRef<FGlobalTabmanager> TabManager = FGlobalTabmanager::Get();
 	TabManager->InvokeTab(VaultTabName);
-
-	// Since we need a instance of the UAssetPublisher to be able to set instance changes on:
-
-
 
 }
 
@@ -118,9 +132,9 @@ TSharedRef<SDockTab> FVaultModule::SpawnOperationTab(const FSpawnTabArgs& TabSpa
 	const TSharedRef<SDockTab> SpawnedTab = SNew(SDockTab)
 		.TabRole(ETabRole::MajorTab);
 
-	TSharedRef<SOperationsChoice> OperationsWidget = SNew(SOperationsChoice, SpawnedTab, TabSpawnArgs.GetOwnerWindow());
+	TSharedRef<SVaultRootPanel> VaultBasePanelWidget = SNew(SVaultRootPanel, SpawnedTab, TabSpawnArgs.GetOwnerWindow());
 
-	SpawnedTab->SetContent(OperationsWidget);
+	SpawnedTab->SetContent(VaultBasePanelWidget);
 
 	return SpawnedTab;
 

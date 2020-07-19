@@ -32,6 +32,11 @@ struct FVaultMetadata
 		RelativePath = FString();
 		MachineID = FString();
 	}
+
+	bool IsMetaValid()
+	{
+		return PackName != NAME_None;
+	}
 };
 
 // Tag Filter Struct used for the Loader UI

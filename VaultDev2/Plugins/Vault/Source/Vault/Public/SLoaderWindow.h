@@ -54,6 +54,12 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 	// // Create the Developer Filter Widget. Bound to the GenerateTile Event
 	TSharedRef<ITableRow> MakeDeveloperFilterViewWidget(FDeveloperFilteringItemPtr Entry, const TSharedRef<STableViewBase>& OwnerTable);
 
+	void OnAssetTileSelectionChanged(TSharedPtr<FVaultMetadata> InItem, ESelectInfo::Type SelectInfo);
+
+	void OnAssetTileDoubleClicked(TSharedPtr<FVaultMetadata> InItem);
+
+	TSharedPtr<SWidget> OnAssetTileContextMenuOpened();
+
 	// ---- End Tables ----- //
 
 	
@@ -99,6 +105,13 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 
 	// ---- End Search Bar System ----
 
+
+
+	// ---- Metadata Zone ---- //
+
+	void ConstructMetadataWidget(TSharedPtr<FVaultMetadata> AssetMeta);
+	TSharedPtr<SVerticalBox> MetadataWidget;
+	TSharedPtr<SBox> MetaWrapper;
 	
 	// GLOBALS
 

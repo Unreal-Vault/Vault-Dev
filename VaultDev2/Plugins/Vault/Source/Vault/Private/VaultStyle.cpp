@@ -9,16 +9,10 @@
 
 TSharedPtr< FSlateStyleSet > FVaultStyle::StyleInstance = NULL;
 
+
+
 void FVaultStyle::Initialize()
 {
-
-
-
-
-
-
-
-
 	if (!StyleInstance.IsValid())
 	{
 		StyleInstance = Create();
@@ -45,8 +39,12 @@ FName FVaultStyle::GetStyleSetName()
 #define TTF_FONT( RelativePath, ... ) FSlateFontInfo( Style->RootToContentDir( RelativePath, TEXT(".ttf") ), __VA_ARGS__ )
 #define OTF_FONT( RelativePath, ... ) FSlateFontInfo( Style->RootToContentDir( RelativePath, TEXT(".otf") ), __VA_ARGS__ )
 
+#define DEFAULT_FONT(...) FCoreStyle::GetDefaultFontStyle(__VA_ARGS__)
+
+const FVector2D Icon8x8(8.f, 8.f);
 const FVector2D Icon16x16(16.0f, 16.0f);
 const FVector2D Icon20x20(20.0f, 20.0f);
+const FVector2D Icon32x32(32.0f, 32.0f);
 const FVector2D Icon40x40(40.0f, 40.0f);
 
 TSharedRef< FSlateStyleSet > FVaultStyle::Create()
@@ -56,6 +54,29 @@ TSharedRef< FSlateStyleSet > FVaultStyle::Create()
 
 	Style->Set("Vault.PluginAction", new IMAGE_BRUSH(TEXT("Vault_Up"), Icon40x40));
 
+	Style->Set("MetaTitleText", FTextBlockStyle()
+		.SetFont(DEFAULT_FONT("Fonts/Roboto - Regular", 14.f))
+		.SetColorAndOpacity(FLinearColor(FLinearColor::White))
+		);
+
+	{
+
+		const FMargin BarPadding = FMargin(0.f, 8);
+
+		const FEditableTextBoxStyle AssetSearchBox = FEditableTextBoxStyle()
+				.SetPadding(BarPadding)
+				;
+
+		Style->Set("AssetSearchBar", FSearchBoxStyle()
+			.SetTextBoxStyle(AssetSearchBox)
+			.SetUpArrowImage(IMAGE_BRUSH("UpArrow", Icon8x8))
+			.SetDownArrowImage(IMAGE_BRUSH("DownArrow", Icon8x8))
+			.SetGlassImage(IMAGE_BRUSH("SearchGlass", Icon16x16))
+			.SetClearImage(IMAGE_BRUSH("X", Icon16x16))
+			
+
+			);
+	}
 	return Style;
 }
 
@@ -64,6 +85,7 @@ TSharedRef< FSlateStyleSet > FVaultStyle::Create()
 #undef BORDER_BRUSH
 #undef TTF_FONT
 #undef OTF_FONT
+#undef DEFAULT_FONT
 
 void FVaultStyle::ReloadTextures()
 {

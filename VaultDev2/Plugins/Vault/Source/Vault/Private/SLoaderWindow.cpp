@@ -1,14 +1,16 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SLoaderWindow.h"
-#include "EditorSupportDelegates.h"
+
+#include "Vault.h"
+#include "EditorSupportDelegates.h" // this doesnt really work atm, need a better clean up or way of migrating maps.
 #include "VaultSettings.h"
 #include "MetadataOps.h"
 #include <ImageUtils.h>
 #include "VaultTypes.h"
-#include "AssetViewItem.h"
 #include "SAssetPackTile.h"
 #include <EditorStyleSet.h>
+#include "VaultStyle.h"
 
 #define LOCTEXT_NAMESPACE "SVaultLoader"
 
@@ -154,6 +156,9 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 	PopulateBaseAssetList();
 	PopulateTagArray();
 	PopulateDeveloperNameArray();
+	
+	// Construct the Holder for the Metadata List
+	MetadataWidget = SNew(SVerticalBox);
 
 	// Set the Default Scale for Sliders. 
 	TileUserScale = 0.5;
@@ -284,19 +289,27 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 							.OnTextCommitted(this, &SLoaderWindow::OnSearchBoxCommitted)
 							.DelayChangeNotificationsWhileTyping(false)
 							.Visibility(EVisibility::Visible)
+							.Style(FVaultStyle::Get(), "AssetSearchBar")
 							.AddMetaData<FTagMetaData>(FTagMetaData(TEXT("AssetSearch")))
 						]
+
 						+ SHorizontalBox::Slot()
-						.AutoWidth()
-						[
-							SNew(STextBlock)
-							.Text(LOCTEXT("StrictSearchCheckBox", "Strict Search"))
-							.Justification(ETextJustify::Right)
-						]
-						+ SHorizontalBox::Slot()
+						.Padding(FMargin(15.f,0.f, 5.f, 0.f))
 						.AutoWidth()
 						[
 							SAssignNew(StrictSearchCheckBox, SCheckBox)
+							.Style(FCoreStyle::Get(), "ToggleButtonCheckbox")
+							.Padding(FMargin( 5.f,0.f ))
+							[
+								SNew(SBox)
+								.VAlign(VAlign_Center)
+								.HAlign(HAlign_Center)
+								.Padding(FMargin(4.f,2.f))
+								[
+									SNew(STextBlock)
+									.Text(LOCTEXT("StrictSearchCheckBox", "Strict Search"))
+								]
+							]
 						]
 					]
 
@@ -313,7 +326,10 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 								.ItemAlignment(EListItemAlignment::EvenlyDistributed)
 								.ListItemsSource(&FilteredAssetItems)
 								.OnGenerateTile(this, &SLoaderWindow::MakeTileViewWidget)
-								//.OnContextMenuOpening()
+								.SelectionMode(ESelectionMode::Single)
+								.OnSelectionChanged(this, &SLoaderWindow::OnAssetTileSelectionChanged)
+								.OnMouseButtonDoubleClick(this, &SLoaderWindow::OnAssetTileDoubleClicked)
+								.OnContextMenuOpening(this, &SLoaderWindow::OnAssetTileContextMenuOpened)
 							]
 							
 						]
@@ -367,7 +383,18 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 							[
 								SNew(STextBlock)
 								.Text(LOCTEXT("VaultLoaderRightSidebarHeaderLabel", "Metadata"))
+								.TextStyle(FVaultStyle::Get(), "MetaTitleText")
 					
+							]
+
+							+ SVerticalBox::Slot()
+							.FillHeight(1)
+							[
+								SAssignNew(MetaWrapper, SBox)
+								[
+									MetadataWidget.ToSharedRef()
+								]
+									
 							]
 						]
 					]
@@ -477,18 +504,13 @@ void SLoaderWindow::PopulateDeveloperNameArray()
 
 TSharedRef<ITableRow> SLoaderWindow::MakeTileViewWidget(TSharedPtr<FVaultMetadata> AssetItem, const TSharedRef<STableViewBase>& OwnerTable)
 {
-	TSharedPtr<STableRow<TSharedPtr<FVaultMetadata>>> TableRowWidget;
-
-	SAssignNew(TableRowWidget, STableRow<TSharedPtr<FVaultMetadata>>, OwnerTable)
-		//.Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
-		.Padding(FMargin(2.0f, 0.0f, 2.0f, 25.0f));
-
-	TSharedRef<SAssetTileItem> Item = SNew(SAssetTileItem)
-		.AssetItem(AssetItem);
-
-	TableRowWidget->SetContent(Item);
-
-	return TableRowWidget.ToSharedRef();
+	return SNew(STableRow<TSharedPtr<FVaultMetadata>>, OwnerTable)
+		.Style(FEditorStyle::Get(), "ContentBrowser.AssetListView.TableRow")
+		.Padding(FMargin(2.0f, 0.0f, 2.0f, 25.0f))
+		[
+			SNew(SAssetTileItem)
+			.AssetItem(AssetItem)
+		];
 }
 
 TSharedRef<ITableRow> SLoaderWindow::MakeTagFilterViewWidget(FTagFilteringItemPtr inTag, const TSharedRef<STableViewBase>& OwnerTable)
@@ -504,6 +526,72 @@ TSharedRef<ITableRow> SLoaderWindow::MakeDeveloperFilterViewWidget(FDeveloperFil
 	return SNew(SDeveloperFilterRow, OwnerTable)
 		.Entry(Entry)
 		.ParentWindow(SharedThis(this));
+}
+
+void SLoaderWindow::OnAssetTileSelectionChanged(TSharedPtr<FVaultMetadata> InItem, ESelectInfo::Type SelectInfo)
+{
+	// Checks if anything is selected
+	if (TileView->GetNumItemsSelected() > 0)
+	{
+		ConstructMetadataWidget(InItem);
+		return;
+	}
+
+	// If no selection, clear the active metadata.
+	MetadataWidget->ClearChildren();
+
+}
+
+void SLoaderWindow::OnAssetTileDoubleClicked(TSharedPtr<FVaultMetadata> InItem)
+{
+	// #todo Add Item to Project on Double Click
+}
+
+TSharedPtr<SWidget> SLoaderWindow::OnAssetTileContextMenuOpened()
+{
+	FMenuBuilder MenuBuilder(true, nullptr, nullptr, true);
+
+	static const FName FilterSelectionHook("AssetContextMenu");
+
+	MenuBuilder.BeginSection(FilterSelectionHook, LOCTEXT("AssetContextMenuLabel", "Vault Asset"));
+	{
+		MenuBuilder.AddMenuEntry(LOCTEXT("ACM_AddToProjectLabel", "Add To Project"), FText::GetEmpty(), FSlateIcon(), 
+			FUIAction(FExecuteAction::CreateLambda([this]()
+				{
+					// #todo make it do something!
+				
+				}), 
+				FCanExecuteAction(),
+				FGetActionCheckState(),
+				FIsActionButtonVisible()));
+
+
+		MenuBuilder.AddMenuEntry(LOCTEXT("ACM_EditVaultAssetDetailsLabel", "Edit Asset"), FText::GetEmpty(), FSlateIcon(),
+			FUIAction(FExecuteAction::CreateLambda([this]()
+				{
+					// #todo make it do something!
+
+				}),
+				FCanExecuteAction(),
+					FGetActionCheckState(),
+					FIsActionButtonVisible()));
+
+
+		MenuBuilder.AddMenuEntry(LOCTEXT("ACM_DeleteVaultAssetLabel", "Delete Asset"), FText::GetEmpty(), FSlateIcon(),
+			FUIAction(FExecuteAction::CreateLambda([this]()
+				{
+					// #todo make it do something!
+
+				}),
+				FCanExecuteAction(),
+					FGetActionCheckState(),
+					FIsActionButtonVisible()));
+
+	}
+	MenuBuilder.EndSection();
+
+	return MenuBuilder.MakeWidget();
+
 }
 
 void SLoaderWindow::OnSearchBoxChanged(const FText& inSearchText)
@@ -552,6 +640,92 @@ void SLoaderWindow::OnSearchBoxChanged(const FText& inSearchText)
 void SLoaderWindow::OnSearchBoxCommitted(const FText& InFilterText, ETextCommit::Type CommitType)
 {
 	OnSearchBoxChanged(InFilterText);
+}
+
+void SLoaderWindow::ConstructMetadataWidget(TSharedPtr<FVaultMetadata> AssetMeta)
+{
+
+	// Safety Catches for Null Assets. Should never occur.
+	if (!MetadataWidget.IsValid())
+	{
+		UE_LOG(LogVault, Error, TEXT("Error - Metadata Ptr is Null."));
+		return;
+	}
+
+	if (!AssetMeta.IsValid() || !AssetMeta->IsMetaValid())
+	{
+		UE_LOG(LogVault, Error, TEXT("Error - Metadata Incoming Data is Null."));
+		return;
+	}
+
+	// Padding between words
+	const FMargin WordPadding = FMargin(0.f,15.f,0.f,0.f);
+
+	MetadataWidget->ClearChildren();
+	
+	// Pack Name
+	MetadataWidget->AddSlot()
+		.AutoHeight()
+		.Padding(WordPadding)
+	[
+		SNew(STextBlock)
+			.Text(FText::FromName(AssetMeta->PackName))
+	];
+
+	// Author
+	MetadataWidget->AddSlot()
+		.AutoHeight()
+		.Padding(WordPadding)
+		[
+			SNew(STextBlock)
+			.Text(FText::Format(LOCTEXT("Meta_AuthorLbl", "Author: {0}"), FText::FromName(AssetMeta->Author)))
+		];
+
+	// Description
+	MetadataWidget->AddSlot()
+		.AutoHeight()
+		.Padding(WordPadding)
+		[
+			SNew(STextBlock)
+			.Text(FText::Format(LOCTEXT("Meta_DescLbl", "Description: {0}"), FText::FromString(AssetMeta->Description)))
+		];
+
+	// Creation Date
+	MetadataWidget->AddSlot()
+		.AutoHeight()
+		.Padding(WordPadding)
+		[
+			SNew(STextBlock)
+			.Text(FText::Format(LOCTEXT("Meta_CreationLbl", "Created: {0}"), FText::FromString(AssetMeta->CreationDate.ToString())))
+		];
+
+	// Last Modified Date
+	MetadataWidget->AddSlot()
+		.AutoHeight()
+		.Padding(WordPadding)
+		[
+			SNew(STextBlock)
+			.Text(FText::Format(LOCTEXT("Meta_LastModifiedLbl", "Last Modified: {0}"), FText::FromString(AssetMeta->LastModified.ToString())))
+		];
+
+	// Tags List
+	MetadataWidget->AddSlot()
+		.AutoHeight()
+		.Padding(WordPadding)
+		[
+			SNew(STextBlock)
+			.Text(FText::Format(LOCTEXT("Meta_TagsLbl", "Tags: {0}"), FText::FromString(FString::Join(AssetMeta->Tags.Array(), TEXT(",")))))
+		];
+
+	// Object List 
+	MetadataWidget->AddSlot()
+		.AutoHeight()
+		.Padding(WordPadding)
+		[
+			SNew(STextBlock)
+			.Text(FText::Format(LOCTEXT("Meta_FilesLbl", "Files: {0}"), FText::FromString(FString::Join(AssetMeta->ObjectsInPack.Array(), TEXT(",")))))
+		];
+
 }
 
 void SLoaderWindow::RefreshAvailableFiles()

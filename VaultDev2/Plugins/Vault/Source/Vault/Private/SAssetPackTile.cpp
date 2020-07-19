@@ -3,73 +3,40 @@
 #include "SAssetPackTile.h"
 
 #include "VaultSettings.h"
-//#include "Slate.h"
-//#include "SlateExtras.h"
-#include "Internationalization\BreakIterator.h"
+#include "SlateBasics.h"
+
 #include "MetadataOps.h"
 #include "ImageUtils.h"
+
 #include "Engine/Texture2D.h"
 
+#include "Styling/SlateBrush.h"
 #include "Widgets/Layout/SScaleBox.h"
 #include "Widgets/Text/STextBlock.h"
+#include "Widgets/Colors/SColorBlock.h"
 #include "Widgets/Images/SImage.h"
 #include "Widgets/Images/SThrobber.h"
 
-
 #define LOCTEXT_NAMESPACE "VaultListsDefinitions"
 
-SAssetPackItem::SAssetPackItem() {}
 
-SAssetPackItem::~SAssetPackItem() {}
-
-void SAssetPackItem::Construct(const FArguments& InArgs)
-{
-	AssetItem = InArgs._AssetItem;
-}
-
-// ------------------- list ---------------------------
-SAssetListItem::SAssetListItem() {}
-
-SAssetListItem::~SAssetListItem() {}
-
-
-BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
-void SAssetListItem::Construct(const FArguments& InArgs)
-{
-	// Pass Asset to parent super
-	SAssetPackItem::Construct(SAssetPackItem::FArguments()
-		.AssetItem(InArgs._AssetItem)
-	);
-
-
-}
-END_SLATE_FUNCTION_BUILD_OPTIMIZATION
-
-// -------------------- tile ---------------------------
-SAssetTileItem::SAssetTileItem()
-{
-
-}
+SAssetTileItem::SAssetTileItem() {}
 
 SAssetTileItem::~SAssetTileItem()
 {
-
+	if (TextureResource && TextureResource->IsValidLowLevel())
+	{
+		TextureResource->ClearFlags(RF_Standalone);
+	}
 }
 
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SAssetTileItem::Construct(const FArguments& InArgs)
 {
-	// Pass Asset to parent super
-	SAssetPackItem::Construct(SAssetPackItem::FArguments()
-		.AssetItem(InArgs._AssetItem)
-	);
+	AssetItem = InArgs._AssetItem;
 
-	ItemWidth = InArgs._ItemWidth;
-	;
-	
-	
-	FSlateBrush* ThumbBrush = new FSlateBrush();
-	TSharedRef<SWidget> ThumbnailWidget = CreateTileThumbnail(AssetItem, ThumbBrush);
+	//FSlateBrush* ThumbBrush = new FSlateBrush();
+	TSharedRef<SWidget> ThumbnailWidget = CreateTileThumbnail(AssetItem);
 	
 	// Clear Old
 	this->ChildSlot [ SNullWidget::NullWidget ];
@@ -126,15 +93,8 @@ void SAssetTileItem::Construct(const FArguments& InArgs)
 }
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
 
-FOptionalSize SAssetTileItem::GetThumbnailBoxSize() const
+TSharedRef<SWidget> SAssetTileItem::CreateTileThumbnail(TSharedPtr<FVaultMetadata> Meta)
 {
-	return FOptionalSize(ItemWidth.Get());
-}
-
-TSharedRef<SWidget> SAssetTileItem::CreateTileThumbnail(TSharedPtr<FVaultMetadata> Meta, FSlateBrush* InBrush)
-{
-	
-		
 	const FString Root = FVaultSettings::Get().GetAssetLibraryRoot();
 	const FString Pack = Meta->PackName.ToString();
 	const FString Filepath = Root / Pack + TEXT(".png");
@@ -151,11 +111,13 @@ TSharedRef<SWidget> SAssetTileItem::CreateTileThumbnail(TSharedPtr<FVaultMetadat
 	
 	UTexture2D* ThumbTexture2D = FImageUtils::ImportFileAsTexture2D(Filepath);
 
+	ThumbnailBrush = MakeShareable(new FSlateBrush());
 
 	if (ThumbTexture2D)
 	{
-		InBrush->SetResourceObject(ThumbTexture2D);
-		InBrush->DrawAs = ESlateBrushDrawType::Image;
+		ThumbnailBrush->SetResourceObject(ThumbTexture2D);
+		ThumbnailBrush->DrawAs = ESlateBrushDrawType::Image;
+		TextureResource = ThumbnailBrush->GetResourceObject();
 
 	}
 
@@ -164,17 +126,11 @@ TSharedRef<SWidget> SAssetTileItem::CreateTileThumbnail(TSharedPtr<FVaultMetadat
 	ItemContentsOverlay->AddSlot()
 		[
 			SNew(SImage)
-			.Image(InBrush)
-			.OnMouseButtonDown(this, &SAssetTileItem::OnAssetTileClicked)
+			.Image(ThumbnailBrush.Get())
+			.Visibility(EVisibility::SelfHitTestInvisible)
 		];
 
 	return ItemContentsOverlay;
-}
-
-FReply SAssetTileItem::OnAssetTileClicked(const FGeometry& Geom, const FPointerEvent& PointerEvent)
-{
-	// #todo
-	return FReply::Handled();
 }
 
 #undef LOCTEXT_NAMESPACE

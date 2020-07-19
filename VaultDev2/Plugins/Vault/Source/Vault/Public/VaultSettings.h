@@ -6,9 +6,6 @@
 #include "Dom/JsonObject.h"
 
 
-/**
- * 
- */
 struct FVaultSettings
 {
 public:
@@ -30,11 +27,7 @@ public:
 
 	FString GetAssetLibraryRoot();
 
-
-
 private:
-
-
 
 	// Easy write to file
 	bool WriteJsonObjectToFile(TSharedPtr<FJsonObject> JsonFile, FString FilepathFull);

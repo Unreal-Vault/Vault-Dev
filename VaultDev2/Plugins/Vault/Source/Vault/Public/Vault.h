@@ -28,6 +28,8 @@ public:
 	// Get Module function
 	static FVaultModule& Get();
 
+
+
 	UAssetPublisher* GetAssetPublisherInstance() { return AssetPublisherInstance; }
 
 
