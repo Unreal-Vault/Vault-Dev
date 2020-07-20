@@ -42,7 +42,6 @@
 
 
 #define LOCTEXT_NAMESPACE "FVaultPublisher"
-#define VAULT_PUBLISHER_CAPTURE_SIZE 512
 #define VAULT_PUBLISHER_THUMBNAIL_SIZE 256
 
 void SPublisherWindow::Construct(const FArguments& InArgs)
@@ -337,7 +336,7 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
 	}
 
 	TArray<FColor> ScaledBitmap;
-	FImageUtils::CropAndScaleImage(SrcWidth, SrcHeight, VAULT_PUBLISHER_CAPTURE_SIZE, VAULT_PUBLISHER_CAPTURE_SIZE, OrigBitmap, ScaledBitmap);
+	FImageUtils::CropAndScaleImage(SrcWidth, SrcHeight, VAULT_PUBLISHER_THUMBNAIL_SIZE, VAULT_PUBLISHER_THUMBNAIL_SIZE, OrigBitmap, ScaledBitmap);
 
 	// Redraw viewport to restore highlight
 	GCurrentLevelEditingViewportClient = OldViewportClient;
@@ -348,7 +347,7 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
 	FCreateTexture2DParameters Params;
 	Params.bDeferCompression = true;
 
-	UTexture2D* ResizedTexture = FImageUtils::CreateTexture2D(VAULT_PUBLISHER_CAPTURE_SIZE, VAULT_PUBLISHER_CAPTURE_SIZE, ScaledBitmap, GetTransientPackage(), FString(), RF_NoFlags, Params);
+	UTexture2D* ResizedTexture = FImageUtils::CreateTexture2D(VAULT_PUBLISHER_THUMBNAIL_SIZE, VAULT_PUBLISHER_THUMBNAIL_SIZE, ScaledBitmap, GetTransientPackage(), FString(), RF_NoFlags, Params);
 	if (ResizedTexture)
 	{
 		return ResizedTexture;

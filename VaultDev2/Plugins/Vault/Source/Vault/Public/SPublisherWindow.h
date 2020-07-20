@@ -34,30 +34,41 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 
 	void UpdateLastModifiedMetadata(const FText& InText, ETextCommit::Type CommitMethod);
 
-	UTextureRenderTarget2D* CaptureThumbnailFromScene(); // old
+	// Capture Screenshot from the Viewport.
+	//UTextureRenderTarget2D* CaptureThumbnailFromScene();
 
 	// Capture Thumbnail from the Screen
-	FReply StartScreenshotCapture();
+	FReply OnCaptureImageFromViewport();
 
-	UTextureRenderTarget2D* ChosenThumbnail; // old
+	FReply OnCaptureImageFromFile();
 
-	FSlateBrush ConvertRenderTargetToSlateBrush(); //old
+	// Viewport Shot, whether captured or loaded. Passed into our SlateBrush, this ref is mainly for checking streaming status
+	UTexture2D* ShotTexture;
 
-	TSharedPtr<SImage> ThumbnailImage; //old
+	//UTextureRenderTarget2D* ChosenThumbnail; // old
+
+	//FSlateBrush ConvertRenderTargetToSlateBrush(); //old
+
+	// SImage Widget for our Thumbnail display
+	TSharedPtr<SImage> ThumbnailImage;
 
 	FString LastScreenshotPath;
 	int ScreenshotFrameCounter;
 	int ScreenshotFrameTryForDuration = 120;
-	void OnThumbnailReady();
+	//void OnThumbnailReady();
 	bool bScreenshotRequested;
+	
+	// Image Brush used by our SImage
 	FSlateBrush ThumbBrush;
 
 	TSharedPtr<SImage> ThumbnailPreviewBox;
 
 	FSlateBrush* ImageSlateBrush;
 
+	// Capture Thumbnail from the Screen
 	UTexture2D* CreateThumbnailFromScene();
 
+	// Capture Thumbnail from a File
 	UTexture2D* CreateThumbnailFromFile();
 
 	// All finished, gather everything and package.

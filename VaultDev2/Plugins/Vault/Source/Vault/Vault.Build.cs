@@ -36,7 +36,8 @@ public class Vault : ModuleRules
 				"PropertyEditor", // Customised Editor Properties
 				"AssetRegistry",
 				"PakFileUtilities",
-				"DesktopPlatform"
+				"DesktopPlatform",
+				"ImageWriteQueue"
 			});
 	}
 }
