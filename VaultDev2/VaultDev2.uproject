@@ -38,6 +38,10 @@
 		{
 			"Name": "VariantManager",
 			"Enabled": true
+		},
+		{
+			"Name": "MultiUserClient",
+			"Enabled": true
 		}
 	]
 }

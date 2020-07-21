@@ -38,12 +38,63 @@
 #include "IDesktopPlatform.h"
 #include "DesktopPlatformModule.h"
 
+
+
 #include "ImageWriteBlueprintLibrary.h"
 
 
 #define LOCTEXT_NAMESPACE "FVaultPublisher"
 #define VAULT_PUBLISHER_CAPTURE_SIZE 512
 #define VAULT_PUBLISHER_THUMBNAIL_SIZE 256
+
+class SVaultLogMessageListRow : public SMultiColumnTableRow<TSharedPtr<FVaultLogMessage>>
+{
+public:
+	SLATE_BEGIN_ARGS(SVaultLogMessageListRow) { }
+	SLATE_ARGUMENT(TSharedPtr<FVaultLogMessage>, Message)
+		SLATE_END_ARGS()
+
+		void Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwnerTableView)
+	{
+		Message = InArgs._Message;
+		SMultiColumnTableRow<TSharedPtr<FVaultLogMessage>>::Construct(FSuperRowType::FArguments(), InOwnerTableView);
+	}
+
+	virtual TSharedRef<SWidget> GenerateWidgetForColumn(const FName& ColumnName) override
+	{
+		return SNew(SBox)
+			.Padding(FMargin(4.0, 0.0))
+			.VAlign((VAlign_Center))
+			[
+				SNew(STextBlock)
+				.ColorAndOpacity(HandleGetTextColor())
+			.Text(Message->Message)
+			];
+	}
+
+private:
+
+	// Callback for getting the task's status text.
+	FSlateColor HandleGetTextColor() const
+	{
+		if ((Message->Verbosity == ELogVerbosity::Error) ||
+			(Message->Verbosity == ELogVerbosity::Fatal))
+		{
+			return FLinearColor::Red;
+		}
+		else if (Message->Verbosity == ELogVerbosity::Warning)
+		{
+			return FLinearColor::Yellow;
+		}
+		else
+		{
+			return FSlateColor::UseForeground();
+		}
+	}
+
+	// Holds a pointer to the task that is displayed in this row.
+	TSharedPtr<FVaultLogMessage> Message;
+};
 
 void SPublisherWindow::Construct(const FArguments& InArgs)
 {
@@ -60,7 +111,6 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 	FDetailsViewArgs DetailsViewArgs;
 	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
 	DetailsViewArgs.bAllowSearch = false;
-	   
 
 	// Create the Details view widget
 	AssetPublisherDetailsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
@@ -69,214 +119,176 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 	AssetPublisherDetailsView->RegisterInstancedCustomPropertyLayout(UAssetPublisher::StaticClass(), FOnGetDetailCustomizationInstance::CreateStatic(&FAssetPublisherTagsCustomization::MakeInstance, WeakPtr));
 	AssetPublisherDetailsView->SetObject(GetMutableDefault<UAssetPublisher>());
 
-	// Start UI
-	TSharedRef<SVerticalBox> MainVerticalBox = SNew(SVerticalBox)
+	// #todo dump this and make the function return the SWidget directly.
+	ConstructThumbnailWidget();
 
-		+ SVerticalBox::Slot()
+	VaultOutputLog = MakeShareable(new FVaultOutputLog);
+
+	// Start UI
+	TSharedRef<SVerticalBox> RootWidget = SNew(SVerticalBox);
+
+	RootWidget->AddSlot()
 		.HAlign(HAlign_Fill)
 		.VAlign(VAlign_Center)
 		.AutoHeight()
 		.Padding(5.f, 5.f, 5.f, 5.f)
 		[
-
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
-				[
-					SNew(SBox)
-					.MaxAspectRatio(1.0f)
-					.HeightOverride(256.0f)
-					.WidthOverride(256.0f)
-					[
-						SNew(SOverlay)
-						+SOverlay::Slot()
-						[
-							SAssignNew(ThumbnailImage, SImage)
-							.Image(&ThumbBrush)
-						]
-						+ SOverlay::Slot()
-						.HAlign(HAlign_Center)
-						.VAlign(VAlign_Center)
-						[
-							SNew(SCircularThrobber)
-							.Radius(48)
-							.NumPieces(10)
-							.Period(0.5f)
-							.Visibility_Lambda([this]()
-								{
-									if (ShotTexture)
-									{
-										return ShotTexture->IsFullyStreamedIn() ? EVisibility::Hidden : EVisibility::SelfHitTestInvisible;
-									}
-									return EVisibility::Hidden;
-								})
-						]
-						
-					]
-				]
-
+			[
+				ThumbnailWidget.ToSharedRef()
+			]
 			+ SHorizontalBox::Slot()
+			[
+				SNew(SVerticalBox)
+				+ SVerticalBox::Slot()
 				[
-					SNew(SVerticalBox)
-
-					+ SVerticalBox::Slot()
-					[
-						// Take Screenshot From World
-						SNew(SButton)
-						.Text(LOCTEXT("TakeScreenshotLabel", "Capture From Viewport"))
-						.ButtonStyle(FEditorStyle::Get(), "FlatButton.Success")
-						.OnClicked(this, &SPublisherWindow::OnCaptureImageFromViewport)
-					]
-					+ SVerticalBox::Slot()
-					[
-						SNew(SButton)
-						.Text(LOCTEXT("TakeScreenshotLabel", "Load From File Screenshot"))
-						.ButtonStyle(FEditorStyle::Get(), "FlatButton.Success")
-						.OnClicked(this, &SPublisherWindow::OnCaptureImageFromFile)
-					]
-
-					+ SVerticalBox::Slot()
-					[
-						SNew(SButton)
-						.Text(LOCTEXT("GeneratePythonMapLabel", "Generate Map from Python"))
-						//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
-					]
-
-					+ SVerticalBox::Slot()
-					[
-						SNew(SButton)
-						.Text(LOCTEXT("LoadPresetMapLabel", "Load Map from Preset Map"))
-						//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
-					]
-
+					// Take Screenshot From World
+					SNew(SButton)
+					.Text(LOCTEXT("TakeScreenshotLabel", "Capture From Viewport"))
+					.ButtonStyle(FEditorStyle::Get(), "FlatButton.Success")
+					.OnClicked(this, &SPublisherWindow::OnCaptureImageFromViewport)
 				]
-		]
 
+				+ SVerticalBox::Slot()
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("TakeScreenshotLabel", "Load From File Screenshot"))
+					.ButtonStyle(FEditorStyle::Get(), "FlatButton.Success")
+					.OnClicked(this, &SPublisherWindow::OnCaptureImageFromFile)
+				]
+				+ SVerticalBox::Slot()
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("GeneratePythonMapLabel", "Generate Map from Python"))
+					//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
+				]
 
-	// Add the Details View, this contains most of the UI
-	+ SVerticalBox::Slot()
-		.HAlign(HAlign_Fill)
-		.VAlign(VAlign_Fill)
-		.AutoHeight()
-		.Padding(0.0)
-		[
-			AssetPublisherDetailsView.ToSharedRef()
-		]
+				+ SVerticalBox::Slot()
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("LoadPresetMapLabel", "Load Map from Preset Map"))
+					//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
+				]
+			] // Close HBox Slot
+		]; // Close VBox
+		
+	RootWidget->AddSlot()
+	.HAlign(HAlign_Fill)
+	.VAlign(VAlign_Fill)
+	.AutoHeight()
+	.Padding(0.0)
+	[
+		AssetPublisherDetailsView.ToSharedRef()
+	];
 
-	+SVerticalBox::Slot()
-		.HAlign(HAlign_Fill)
-		.VAlign(VAlign_Fill)
-		.AutoHeight()
-		.Padding(0.0)
-		[
-			AssetPublisherTagsView.ToSharedRef()
-		]
+	RootWidget->AddSlot()
+	.HAlign(HAlign_Fill)
+	.VAlign(VAlign_Fill)
+	.AutoHeight()
+	.Padding(0.0)
+	[
+		AssetPublisherTagsView.ToSharedRef()
+	];
 	
 
-	+ SVerticalBox::Slot()
-		.AutoHeight()
-		.HAlign(HAlign_Fill)
-		.VAlign(VAlign_Center)
-		.Padding(0.0)
+	RootWidget->AddSlot()
+	.AutoHeight()
+	.HAlign(HAlign_Fill)
+	.VAlign(VAlign_Center)
+	.Padding(0.0)
+	[
+		SNew(SBorder)
+		.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
 		[
-			SNew(SBorder)
-			.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
-		[
-			SNew(SHorizontalBox)
-				// Left Slot - Primary Assets
-				+SHorizontalBox::Slot()
-				.Padding(0,0,10,0)
-				[
-					SNew(SVerticalBox)
-					+SVerticalBox::Slot()
-					.AutoHeight()
-					[
-						SNew(STextBlock)
-						.Text(LOCTEXT("primaryAssetBoxHeaderLbl", "Primary Assets to Package"))
-					]
-
-					+ SVerticalBox::Slot()
-						.AutoHeight()
-					[
-						SAssignNew(PrimaryAssetsBox, SMultiLineEditableTextBox)
-						.IsReadOnly(true)
-						.AllowMultiLine(true)
-						.AlwaysShowScrollbars(false)
-						.Text(this, &SPublisherWindow::GetPrimaryAssetList)
-					]
-				]
-
-
-
-
-				+ SHorizontalBox::Slot()
-				[
-					SNew(SVerticalBox)
-					+ SVerticalBox::Slot()
-					.AutoHeight()
-					[
-						SNew(STextBlock)
-						.Text(LOCTEXT("seecondaryAssetBoxHeaderLbl", "Additional Referenced Assets to Package"))
-					]
-
-					+ SVerticalBox::Slot()
-					.AutoHeight()
-					[
-						SAssignNew(SecondaryAssetsBox, SMultiLineEditableTextBox)
-						.IsReadOnly(true)
-						.AllowMultiLine(true)
-						.AlwaysShowScrollbars(false)
-						.Text(this, &SPublisherWindow::GetSecondaryAssetList)
-					]
-				]
-			]
-		]
-		
-		// Confirm buttons, these will go at the bottom, so new things go above this.
-		+ SVerticalBox::Slot()
+			SNew(SVerticalBox)
+			+ SVerticalBox::Slot()
 			.AutoHeight()
-			.HAlign(HAlign_Fill)
-			.VAlign(VAlign_Center)
-			.Padding(5.f, 5.f, 5.f, 5.f)
 			[
-				SNew(SButton)
-				.OnClicked(this, &SPublisherWindow::TryPackage)
-				.Text(LOCTEXT("SubmitToVaultLabel", "Submit to Vault"))
-				.IsEnabled_Lambda([this]()
-				{
-					return CanPackage();
-				})
+				SNew(STextBlock)
+				.Text(LOCTEXT("seecondaryAssetBoxHeaderLbl", "Additional Referenced Assets to Package"))
 			]
-
-		+ SVerticalBox::Slot()
+			+ SVerticalBox::Slot()
 			.AutoHeight()
-			.HAlign(HAlign_Fill)
-			.VAlign(VAlign_Bottom)
-			.Padding(5.f, 5.f, 5.f, 5.f)
 			[
-				SAssignNew(OutputLogBox, SMultiLineEditableTextBox)
-				.AllowContextMenu(false)
-				.AllowMultiLine(true)
+				SAssignNew(SecondaryAssetsBox, SMultiLineEditableTextBox)
 				.IsReadOnly(true)
-				.AutoWrapText(false)
-				.Text(LOCTEXT("tmpLabel", "Output data display - tmp text"))
-			];
-	
-		//+ SVerticalBox::Slot()
-		//	[
-		//		SNew(SOutputLog)
-		//	
-		//	]
+				.AllowMultiLine(true)
+				.AlwaysShowScrollbars(false)
+				.Text(this, &SPublisherWindow::GetSecondaryAssetList)
+			]
+		] // close border
+	]; //close slot
+
+	RootWidget->AddSlot()
+	.AutoHeight()
+	.HAlign(HAlign_Fill)
+	.VAlign(VAlign_Center)
+	.Padding(5.f, 5.f, 5.f, 5.f)
+	[
+		SNew(SButton)
+		.OnClicked(this, &SPublisherWindow::TryPackage)
+		.Text(LOCTEXT("SubmitToVaultLabel", "Submit to Vault"))
+		.ButtonStyle(FEditorStyle::Get(), "FlatButton.Success")
+		.IsEnabled(this, &SPublisherWindow::CanPackage)
+	];
+
+	RootWidget->AddSlot()
+	[
+		ConstructOutputLog()
+	];
 		
-		ChildSlot
+	ChildSlot
+	[
+		SNew(SScrollBox)
+		.Orientation(Orient_Vertical)
+		+SScrollBox::Slot()
 		[
-			MainVerticalBox
-		];
+			RootWidget
+		]
+	];
 
 }
 
 void SPublisherWindow::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
 
+}
+
+void SPublisherWindow::ConstructThumbnailWidget()
+{
+	ThumbnailWidget = 
+		SNew(SBox)
+		.MaxAspectRatio(1.0f)
+		.HeightOverride(256.0f)
+		.WidthOverride(256.0f)
+		[
+			// Thumbnail Area
+			SNew(SOverlay)
+			+ SOverlay::Slot()
+			[
+				SAssignNew(ThumbnailImage, SImage)
+				.Image(&ThumbBrush)
+			]
+
+			+ SOverlay::Slot()
+			.HAlign(HAlign_Center)
+			.VAlign(VAlign_Center)
+			[
+				SNew(SCircularThrobber)
+				.Radius(48)
+				.NumPieces(10)
+				.Period(0.5f)
+				.Visibility_Lambda([this]()
+				{
+					if (ShotTexture)
+					{
+						return ShotTexture->IsFullyStreamedIn() ? EVisibility::Hidden : EVisibility::SelfHitTestInvisible;
+					}
+					return EVisibility::Hidden;
+				})
+			]
+		];
 }
 
 FReply SPublisherWindow::OnCaptureImageFromViewport()
@@ -558,10 +570,56 @@ FText SPublisherWindow::GetSecondaryAssetList() const
 	return FText::GetEmpty();
 }
 
-bool SPublisherWindow::CanPackage()
+bool SPublisherWindow::CanPackage() const
 {
 	// #todo Currently only check pack name, should check more like screenshot and other details. Enforce some rules!
 	return true;
+}
+
+TSharedRef<SWidget> SPublisherWindow::ConstructOutputLog()
+{
+	VaultOutputLog->OnVaultMessageReceived.BindRaw(this, &SPublisherWindow::RefreshOutputLogList);
+
+	return SNew(SExpandableArea)
+	.InitiallyCollapsed(false)
+	.MaxHeight(300.f)
+	.HeaderContent()
+	[
+		SNew(STextBlock)
+		.Text(LOCTEXT("OutputLogHeaderLbl", "Output Log"))
+	]
+	.BodyContent()
+	[
+		SNew(SScrollBox)
+		.Orientation(Orient_Vertical)
+		+ SScrollBox::Slot()
+		[
+			SAssignNew(VaultOutputLogList, SListView<TSharedPtr< FVaultLogMessage>>)
+			.ListItemsSource(&VaultOutputLog->MessageList)
+			.OnGenerateRow(this, &SPublisherWindow::HandleVaultLogGenerateRow)
+			.ItemHeight(24)
+			.SelectionMode(ESelectionMode::Multi)
+			.HeaderRow(SNew(SHeaderRow)
+			.Visibility(EVisibility::Collapsed)
+			+ SHeaderRow::Column("Log")
+			.DefaultLabel(LOCTEXT("VaultLogHeaderLbl", "Output Log")))
+		]
+	];
+
+}
+
+TSharedRef<ITableRow> SPublisherWindow::HandleVaultLogGenerateRow(TSharedPtr<FVaultLogMessage> InItem, const TSharedRef<STableViewBase>& OwnerTable)
+{
+	return SNew(SVaultLogMessageListRow, OwnerTable)
+		.Message(InItem);
+}
+
+void SPublisherWindow::RefreshOutputLogList()
+{
+	if (VaultOutputLogList)
+	{
+		VaultOutputLogList->RebuildList();
+	}
 }
 
 FText SPublisherWindow::GetPrimaryAssetList() const

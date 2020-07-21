@@ -191,7 +191,7 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 				.Value(0.2f)
 				[
 					SNew(SBorder)
-					.BorderImage(FEditorStyle::GetBrush("ToolPanel.DarkGroupBorder"))
+					.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
 					.Padding(FMargin(4.0f, 4.0f))
 					[
 						// Left Sidebar!
@@ -279,108 +279,112 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 				+SSplitter::Slot()
 				.Value(0.6f)
 				[
-					
-					SNew(SVerticalBox)
-					+ SVerticalBox::Slot()
-					.AutoHeight()
+					SNew(SBorder)
+					.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
+					.Padding(FMargin(4.0f, 4.0f))
 					[
-						SNew(SHorizontalBox)
-						+ SHorizontalBox::Slot()
-						.FillWidth(1)
-						.Padding(FMargin(0,3,0,0))
+						SNew(SVerticalBox)
+						+ SVerticalBox::Slot()
+						.AutoHeight()
 						[
-							// Center content area
-							SAssignNew(SearchBox, SSearchBox)
-							.HintText(LOCTEXT("SearchBoxHintText", "Search..."))
-							.OnTextChanged(this, &SLoaderWindow::OnSearchBoxChanged)
-							.OnTextCommitted(this, &SLoaderWindow::OnSearchBoxCommitted)
-							.DelayChangeNotificationsWhileTyping(false)
-							.Visibility(EVisibility::Visible)
-							.Style(FVaultStyle::Get(), "AssetSearchBar")
-							.AddMetaData<FTagMetaData>(FTagMetaData(TEXT("AssetSearch")))
+							SNew(SHorizontalBox)
+							+ SHorizontalBox::Slot()
+							.FillWidth(1)
+							.Padding(FMargin(0,3,0,0))
+							[
+								// Center content area
+								SAssignNew(SearchBox, SSearchBox)
+								.HintText(LOCTEXT("SearchBoxHintText", "Search..."))
+								.OnTextChanged(this, &SLoaderWindow::OnSearchBoxChanged)
+								.OnTextCommitted(this, &SLoaderWindow::OnSearchBoxCommitted)
+								.DelayChangeNotificationsWhileTyping(false)
+								.Visibility(EVisibility::Visible)
+								.Style(FVaultStyle::Get(), "AssetSearchBar")
+								.AddMetaData<FTagMetaData>(FTagMetaData(TEXT("AssetSearch")))
+							]
+
+							+ SHorizontalBox::Slot()
+							.Padding(FMargin(15.f,0.f, 5.f, 0.f))
+							.AutoWidth()
+							[
+								SAssignNew(StrictSearchCheckBox, SCheckBox)
+								.Style(FCoreStyle::Get(), "ToggleButtonCheckbox")
+								.Padding(FMargin( 5.f,0.f ))
+								[
+									SNew(SBox)
+									.VAlign(VAlign_Center)
+									.HAlign(HAlign_Center)
+									.Padding(FMargin(4.f,2.f))
+									[
+										SNew(STextBlock)
+										.Text(LOCTEXT("StrictSearchCheckBox", "Strict Search"))
+									]
+								]
+							]
 						]
 
-						+ SHorizontalBox::Slot()
-						.Padding(FMargin(15.f,0.f, 5.f, 0.f))
-						.AutoWidth()
-						[
-							SAssignNew(StrictSearchCheckBox, SCheckBox)
-							.Style(FCoreStyle::Get(), "ToggleButtonCheckbox")
-							.Padding(FMargin( 5.f,0.f ))
+						// Tile View
+						+ SVerticalBox::Slot()
+						.FillHeight(1.0f)
 							[
 								SNew(SBox)
-								.VAlign(VAlign_Center)
-								.HAlign(HAlign_Center)
-								.Padding(FMargin(4.f,2.f))
+								.Padding(FMargin(5,5,5,5))
 								[
-									SNew(STextBlock)
-									.Text(LOCTEXT("StrictSearchCheckBox", "Strict Search"))
+									SAssignNew(TileView, STileView<TSharedPtr<FVaultMetadata>>)
+									.ItemWidth(TILE_SCALED_WIDTH)
+									.ItemHeight(TILE_SCALED_HEIGHT)
+									.ItemAlignment(EListItemAlignment::EvenlyDistributed)
+									.ListItemsSource(&FilteredAssetItems)
+									.OnGenerateTile(this, &SLoaderWindow::MakeTileViewWidget)
+									.SelectionMode(ESelectionMode::Single)
+									.OnSelectionChanged(this, &SLoaderWindow::OnAssetTileSelectionChanged)
+									.OnMouseButtonDoubleClick(this, &SLoaderWindow::OnAssetTileDoubleClicked)
+									.OnContextMenuOpening(this, &SLoaderWindow::OnAssetTileContextMenuOpened)
 								]
-							]
-						]
-					]
-
-					// Tile View
-					+ SVerticalBox::Slot()
-					.FillHeight(1.0f)
-						[
-							SNew(SBox)
-							.Padding(FMargin(5,5,5,5))
-							[
-								SAssignNew(TileView, STileView<TSharedPtr<FVaultMetadata>>)
-								.ItemWidth(TILE_SCALED_WIDTH)
-								.ItemHeight(TILE_SCALED_HEIGHT)
-								.ItemAlignment(EListItemAlignment::EvenlyDistributed)
-								.ListItemsSource(&FilteredAssetItems)
-								.OnGenerateTile(this, &SLoaderWindow::MakeTileViewWidget)
-								.SelectionMode(ESelectionMode::Single)
-								.OnSelectionChanged(this, &SLoaderWindow::OnAssetTileSelectionChanged)
-								.OnMouseButtonDoubleClick(this, &SLoaderWindow::OnAssetTileDoubleClicked)
-								.OnContextMenuOpening(this, &SLoaderWindow::OnAssetTileContextMenuOpened)
-							]
 							
-						]
-						
-					// Bottom Bar
-					+ SVerticalBox::Slot()
-					.AutoHeight()
-					[
-						SNew(SHorizontalBox)
-						+ SHorizontalBox::Slot()
-						[
-							SNew(STextBlock)
-							.Text(LOCTEXT("selectedURLLabel", "Selected Asset URL"))
-						]
-
-						+ SHorizontalBox::Slot()
-							[
-								// Scale Slider
-								SNew(SHorizontalBox)
-								+ SHorizontalBox::Slot()
-								.Padding(FMargin(0, 3, 0, 0))
-								[
-									SNew(STextBlock)
-									.Text(LOCTEXT("ScaleSliderLabel", "Thumbnail Scale"))
-									.Justification(ETextJustify::Right)
-								]
-								+ SHorizontalBox::Slot()
-									[
-										SAssignNew(UserScaleSlider, SSlider)
-										.Value(TileUserScale)
-										.MinValue(0.2)
-										.OnValueChanged(this, &SLoaderWindow::OnThumbnailSliderValueChanged)
-									]
 							]
-					]
-					
+						
+						// Bottom Bar
+						+ SVerticalBox::Slot()
+						.AutoHeight()
+						[
+							SNew(SHorizontalBox)
+							+ SHorizontalBox::Slot()
+							[
+								SNew(STextBlock)
+								.Text(LOCTEXT("selectedURLLabel", "Selected Asset URL"))
+							]
+
+							+ SHorizontalBox::Slot()
+								[
+									// Scale Slider
+									SNew(SHorizontalBox)
+									+ SHorizontalBox::Slot()
+									.Padding(FMargin(0, 3, 0, 0))
+									[
+										SNew(STextBlock)
+										.Text(LOCTEXT("ScaleSliderLabel", "Thumbnail Scale"))
+										.Justification(ETextJustify::Right)
+									]
+									+ SHorizontalBox::Slot()
+										[
+											SAssignNew(UserScaleSlider, SSlider)
+											.Value(TileUserScale)
+											.MinValue(0.2)
+											.OnValueChanged(this, &SLoaderWindow::OnThumbnailSliderValueChanged)
+										]
+								]
+						]
+					] // close border for center area
 				] // ~ Close Center Area Splitter
+				
 
 				// Metadata Zone
 				+ SSplitter::Slot()
 					.Value(0.2f)
 					[
 						SNew(SBorder)
-						.BorderImage(FEditorStyle::GetBrush("ToolPanel.DarkGroupBorder"))
+						.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
 						.Padding(FMargin(4.0f, 4.0f))
 						[
 							// Left Sidebar!
@@ -401,16 +405,19 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 								[
 									MetadataWidget.ToSharedRef()
 								]
-									
 							]
 						]
 					]
-
 				] // ~ hbox			
 				]; // ~ LoaderRoot
 	ChildSlot
 		[
-			LoaderRoot
+			SNew(SBorder)
+			.BorderImage(FEditorStyle::GetBrush("ToolPanel.DarkGroupBorder"))
+			.Padding(FMargin(2.f,2.f))
+			[
+				LoaderRoot
+			]
 		];
 
 }

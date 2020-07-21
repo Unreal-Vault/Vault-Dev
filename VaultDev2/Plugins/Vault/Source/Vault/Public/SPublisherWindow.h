@@ -10,6 +10,7 @@
 #include <IDetailsView.h>
 #include "Misc/TextFilterExpressionEvaluator.h"
 #include <Engine/GameViewportClient.h>
+#include "VaultOutputLog.h"
 
 
 class VAULT_API SPublisherWindow : public SCompoundWidget
@@ -22,6 +23,9 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 
 	// On Tick
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
+
+	void ConstructThumbnailWidget();
+	TSharedPtr<SWidget> ThumbnailWidget;
 
 	// Main data holder
 	FVaultMetadata AssetPublishMetadata;
@@ -102,10 +106,19 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	FText GetSecondaryAssetList() const;
 
 	// Check if we are all ready to publish (controls publish button enabled)
-	bool CanPackage();
+	bool CanPackage() const;
 
 	// Stores if our last screenshot loaded back successfully. Mainly for packaging checks
 	bool bHasValidScreenshot = false;
+
+	// Output Log Object
+	TSharedPtr<FVaultOutputLog> VaultOutputLog;
+	TSharedPtr<SListView<TSharedPtr< FVaultLogMessage>>> VaultOutputLogList;
+	TSharedRef<SWidget> ConstructOutputLog();
+
+	TSharedRef<ITableRow> HandleVaultLogGenerateRow(TSharedPtr<FVaultLogMessage> InItem, const TSharedRef<STableViewBase>& OwnerTable);
+
+	void RefreshOutputLogList();
 
 };
 
