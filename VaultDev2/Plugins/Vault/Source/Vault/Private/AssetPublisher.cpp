@@ -31,9 +31,8 @@ bool UAssetPublisher::PackageSelected(TSet<FString> PackageObjects, FVaultMetada
 {
 	UpdateSystemMeta(Meta);
 
-
 	bool bWipePackageList = FVaultSettings::Get().GetVaultLocalSettings()->GetBoolField(TEXT("ClearPackageListOnSuccessfulPackage"));
-	// store in a better place, make name procedural, so it can be kept for archive and even analysis by loader.
+	// #todo store in a better place, make name procedural, so it can be kept for archive and even analysis by loader.
 
 	// Dated Filename
 	const FString PackageListFilename = TEXT("VaultPackageList_") + Meta.LastModified.ToString() + TEXT(".txt");

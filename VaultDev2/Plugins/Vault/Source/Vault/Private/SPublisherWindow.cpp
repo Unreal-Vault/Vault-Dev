@@ -120,7 +120,7 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 	AssetPublisherDetailsView->SetObject(GetMutableDefault<UAssetPublisher>());
 
 	// #todo dump this and make the function return the SWidget directly.
-	ConstructThumbnailWidget();
+	//ConstructThumbnailWidget();
 
 	VaultOutputLog = MakeShareable(new FVaultOutputLog);
 
@@ -136,41 +136,71 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
 			[
-				ThumbnailWidget.ToSharedRef()
+				// left panel
+				SNew(STextBlock)
+				.Text(LOCTEXT("vdsfvdfv", "Holder"))
+
 			]
-			+ SHorizontalBox::Slot()
+			+SHorizontalBox::Slot()
+			.HAlign(HAlign_Right)
 			[
+				// Left Panel
 				SNew(SVerticalBox)
-				+ SVerticalBox::Slot()
+				+SVerticalBox::Slot()
+				.FillHeight(1)
 				[
-					// Take Screenshot From World
-					SNew(SButton)
-					.Text(LOCTEXT("TakeScreenshotLabel", "Capture From Viewport"))
-					.ButtonStyle(FEditorStyle::Get(), "FlatButton.Success")
-					.OnClicked(this, &SPublisherWindow::OnCaptureImageFromViewport)
-				]
-
-				+ SVerticalBox::Slot()
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("TakeScreenshotLabel", "Load From File Screenshot"))
-					.ButtonStyle(FEditorStyle::Get(), "FlatButton.Success")
-					.OnClicked(this, &SPublisherWindow::OnCaptureImageFromFile)
+					ConstructThumbnailWidget().ToSharedRef()
 				]
 				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.Padding(FMargin(0,5,0,0))
 				[
-					SNew(SButton)
-					.Text(LOCTEXT("GeneratePythonMapLabel", "Generate Map from Python"))
-					//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
+					SNew(SHorizontalBox)
+					+SHorizontalBox::Slot()
+					.Padding(FMargin(0.f, 0.f, 1.f, 0.f))
+					[
+						// Take Screenshot From World
+						SNew(SButton)
+						.ContentPadding(FMargin(6.f))
+						.Text(LOCTEXT("TakeScreenshotLbl", "Capture From Viewport"))
+						.ButtonStyle(FEditorStyle::Get(), "FlatButton.Primary")
+						.TextStyle(FEditorStyle::Get(), "NormalText.Important")
+						.OnClicked(this, &SPublisherWindow::OnCaptureImageFromViewport)
+					]
+					+ SHorizontalBox::Slot()
+					.Padding(FMargin(1.f, 0.f, 0.f, 0.f))
+					[
+						SNew(SButton)
+						.ContentPadding(FMargin(6.f))
+						.Text(LOCTEXT("LoadScreenshotFromFileLbl", "Load From File"))
+						.ButtonStyle(FEditorStyle::Get(), "FlatButton.Primary")
+						.TextStyle(FEditorStyle::Get(), "NormalText.Important")
+						.OnClicked(this, &SPublisherWindow::OnCaptureImageFromFile)
+					]
 				]
-
 				+ SVerticalBox::Slot()
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("LoadPresetMapLabel", "Load Map from Preset Map"))
-					//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
-				]
-			] // Close HBox Slot
+					.AutoHeight()
+					.Padding(FMargin(0, 5, 0, 0))
+					[
+						SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot()
+						.Padding(FMargin(0.f, 0.f, 1.f, 0.f))
+						[
+							SNew(SButton)
+							.Text(LOCTEXT("GeneratePythonMapLabel", "Generate Map from Python"))
+							.ButtonStyle(FEditorStyle::Get(), "FlatButton.Info")
+							//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
+						]
+						+ SHorizontalBox::Slot()
+						.Padding(FMargin(1.f, 0.f, 0.f, 0.f))
+						[
+							SNew(SButton)
+							.Text(LOCTEXT("LoadPresetMapLabel", "Load Map from Preset Map"))
+							.ButtonStyle(FEditorStyle::Get(), "FlatButton.Info")
+							//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
+						]
+					]
+			]
 		]; // Close VBox
 		
 	RootWidget->AddSlot()
@@ -191,7 +221,6 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 		AssetPublisherTagsView.ToSharedRef()
 	];
 	
-
 	RootWidget->AddSlot()
 	.AutoHeight()
 	.HAlign(HAlign_Fill)
@@ -227,9 +256,12 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 	.Padding(5.f, 5.f, 5.f, 5.f)
 	[
 		SNew(SButton)
+		.HAlign(HAlign_Center)
 		.OnClicked(this, &SPublisherWindow::TryPackage)
 		.Text(LOCTEXT("SubmitToVaultLabel", "Submit to Vault"))
 		.ButtonStyle(FEditorStyle::Get(), "FlatButton.Success")
+		.TextStyle(FEditorStyle::Get(), "NormalText.Important")
+		.ContentPadding(FMargin(10.0,10.0))
 		.IsEnabled(this, &SPublisherWindow::CanPackage)
 	];
 
@@ -255,17 +287,20 @@ void SPublisherWindow::Tick(const FGeometry& AllottedGeometry, const double InCu
 
 }
 
-void SPublisherWindow::ConstructThumbnailWidget()
+TSharedPtr<SWidget> SPublisherWindow::ConstructThumbnailWidget()
 {
-	ThumbnailWidget = 
+	// Init the thumb brush. these settings are only for pre-image choice
+	ThumbBrush.SetImageSize(FVector2D(256.0));
+
+	return ThumbnailWidget = 
 		SNew(SBox)
-		.MaxAspectRatio(1.0f)
-		.HeightOverride(256.0f)
-		.WidthOverride(256.0f)
+		//.HAlign(HAlign_Center)
 		[
 			// Thumbnail Area
 			SNew(SOverlay)
 			+ SOverlay::Slot()
+			.HAlign(HAlign_Fill)
+			.VAlign(VAlign_Fill)
 			[
 				SAssignNew(ThumbnailImage, SImage)
 				.Image(&ThumbBrush)
@@ -484,50 +519,49 @@ FReply SPublisherWindow::TryPackage()
 	return FReply::Handled();
 }
 
-void SPublisherWindow::OnPrimaryAssetListChanged()
-{
-	AddSelectedToList();
-}
-
-FReply SPublisherWindow::AddSelectedToList()
-{
-	// Check if we have something selected:
-	if (!GetDefault<UAssetPublisher>()->PrimaryAsset->IsValidLowLevel())
-	{
-		return FReply::Handled();
-	}
-
-
-	FText PriorText = PrimaryAssetsBox->GetText();
-	FString NewText = PriorText.ToString();
-
-	FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
-	TArray<FAssetData> SelectedAssets;
-	ContentBrowserModule.Get().GetSelectedAssets(SelectedAssets);
-	TArray<FString> Result;
-	TArray<FString> SecondaryResult;
-	for (FAssetData& AssetData : SelectedAssets) {
-		Result.Add(AssetData.PackageName.ToString());
-
-		NewText += "," + AssetData.PackageName.ToString();
-
-		SecondaryResult.Append(GetAssetDependancies((AssetData.PackageName)));
-	}
-	
-	PrimaryAssetsBox->SetText(FText::FromName(GetDefault<UAssetPublisher>()->PrimaryAsset->GetFName()));
-	
-	PrimaryAssetsBox->Refresh();
-
-	FString SecondaryAssetsBoxText;
-	
-	for (FString Secondary: SecondaryResult)
-	{
-		SecondaryAssetsBoxText += Secondary;
-	}
-
-	SecondaryAssetsBox->SetText(FText::FromString(SecondaryAssetsBoxText));
-	return FReply::Handled();
-}
+//void SPublisherWindow::OnPrimaryAssetListChanged()
+//{
+//	AddSelectedToList();
+//}
+//
+//FReply SPublisherWindow::AddSelectedToList()
+//{
+//	// Check if we have something selected:
+//	if (!GetDefault<UAssetPublisher>()->PrimaryAsset->IsValidLowLevel())
+//	{
+//		return FReply::Handled();
+//	}
+//
+//	FText PriorText = PrimaryAssetsBox->GetText();
+//	FString NewText = PriorText.ToString();
+//
+//	FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+//	TArray<FAssetData> SelectedAssets;
+//	ContentBrowserModule.Get().GetSelectedAssets(SelectedAssets);
+//	TArray<FString> Result;
+//	TArray<FString> SecondaryResult;
+//	for (FAssetData& AssetData : SelectedAssets) {
+//		Result.Add(AssetData.PackageName.ToString());
+//
+//		NewText += "," + AssetData.PackageName.ToString();
+//
+//		SecondaryResult.Append(GetAssetDependancies((AssetData.PackageName)));
+//	}
+//	
+//	PrimaryAssetsBox->SetText(FText::FromName(GetDefault<UAssetPublisher>()->PrimaryAsset->GetFName()));
+//	
+//	PrimaryAssetsBox->Refresh();
+//
+//	FString SecondaryAssetsBoxText;
+//	
+//	for (FString Secondary: SecondaryResult)
+//	{
+//		SecondaryAssetsBoxText += Secondary;
+//	}
+//
+//	SecondaryAssetsBox->SetText(FText::FromString(SecondaryAssetsBoxText));
+//	return FReply::Handled();
+//}
 
 TArray<FString> SPublisherWindow::GetAssetDependancies(const FName AssetPath) const
 {
@@ -622,16 +656,16 @@ void SPublisherWindow::RefreshOutputLogList()
 	}
 }
 
-FText SPublisherWindow::GetPrimaryAssetList() const
-{
-	TSoftObjectPtr<UObject> Asset = GetMutableDefault<UAssetPublisher>()->PrimaryAsset;
-
-	if (Asset)
-	{
-		return FText::FromString(Asset->GetName());
-	}
-	return FText::GetEmpty();
-}
+//FText SPublisherWindow::GetPrimaryAssetList() const
+//{
+//	TSoftObjectPtr<UObject> Asset = GetMutableDefault<UAssetPublisher>()->PrimaryAsset;
+//
+//	if (Asset)
+//	{
+//		return FText::FromString(Asset->GetName());
+//	}
+//	return FText::GetEmpty();
+//}
 
 void SPublisherWindow::UpdateLastModifiedMetadata(const FText& InText, ETextCommit::Type CommitMethod)
 {

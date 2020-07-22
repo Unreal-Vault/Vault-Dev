@@ -24,7 +24,7 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	// On Tick
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
-	void ConstructThumbnailWidget();
+	TSharedPtr<SWidget> ConstructThumbnailWidget();
 	TSharedPtr<SWidget> ThumbnailWidget;
 
 	// Main data holder
@@ -38,9 +38,6 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 
 	void UpdateLastModifiedMetadata(const FText& InText, ETextCommit::Type CommitMethod);
 
-	// Capture Screenshot from the Viewport.
-	//UTextureRenderTarget2D* CaptureThumbnailFromScene();
-
 	// Capture Thumbnail from the Screen
 	FReply OnCaptureImageFromViewport();
 
@@ -49,18 +46,14 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	// Viewport Shot, whether captured or loaded. Passed into our SlateBrush, this ref is mainly for checking streaming status
 	UTexture2D* ShotTexture;
 
-	//UTextureRenderTarget2D* ChosenThumbnail; // old
-
-	//FSlateBrush ConvertRenderTargetToSlateBrush(); //old
-
 	// SImage Widget for our Thumbnail display
 	TSharedPtr<SImage> ThumbnailImage;
 
-	FString LastScreenshotPath;
-	int ScreenshotFrameCounter;
-	int ScreenshotFrameTryForDuration = 120;
+	//FString LastScreenshotPath;
+	//int ScreenshotFrameCounter;
+	//int ScreenshotFrameTryForDuration = 120;
 	//void OnThumbnailReady();
-	bool bScreenshotRequested;
+	//bool bScreenshotRequested;
 	
 	// Image Brush used by our SImage
 	FSlateBrush ThumbBrush;
@@ -78,9 +71,9 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	// All finished, gather everything and package.
 	FReply TryPackage();
 
-	FReply AddSelectedToList();
+	//FReply AddSelectedToList();
 
-	void OnPrimaryAssetListChanged();
+	//void OnPrimaryAssetListChanged();
 
 	TSharedPtr<SMultiLineEditableTextBox> OutputLogBox;
 
@@ -91,7 +84,7 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	UGameViewportClient* ViewportClient;
 	UWorld* ViewportWorld;
 
-	TSharedPtr<SMultiLineEditableTextBox> PrimaryAssetsBox;
+	//TSharedPtr<SMultiLineEditableTextBox> PrimaryAssetsBox;
 	TSharedPtr<SMultiLineEditableTextBox> SecondaryAssetsBox;
 
 	// This is the details view for the asset publisher view
@@ -102,7 +95,7 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	TSharedPtr<FUICommandList> CommandList;
 
 
-	FText GetPrimaryAssetList() const;
+	//FText GetPrimaryAssetList() const;
 	FText GetSecondaryAssetList() const;
 
 	// Check if we are all ready to publish (controls publish button enabled)

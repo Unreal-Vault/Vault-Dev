@@ -22,7 +22,6 @@ void FAssetPublisherTagsCustomization::CustomizeDetails(IDetailLayoutBuilder& De
 	// Refresh available tags into our array from the json file
 	RefreshTagPool();
 
-
 	// Force Vault Category to show first by calling its edit.
 	DetailBuilder.EditCategory(TEXT("Vault"));
 

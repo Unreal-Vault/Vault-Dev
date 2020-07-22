@@ -8,10 +8,6 @@
 #include "VaultTypes.h"
 #include "AssetPublisher.generated.h"
 
-
-/**
- * 
- */
 UCLASS()
 class VAULT_API UAssetPublisher : public UObject
 {
@@ -30,15 +26,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Vault")
 	FString Description;
 
-
 	UPROPERTY(EditAnywhere, Category = "Vault")
 	TSoftObjectPtr<UObject> PrimaryAsset;
 
-	UPROPERTY(VisibleAnywhere, Category = "Package List")
-	FString SecondaryAssetsToInclude;
-
-
-
+	//UPROPERTY(VisibleAnywhere, Category = "Package List")
+	//FString SecondaryAssetsToInclude;
 
 	virtual void PostEditChangeChainProperty(struct FPropertyChangedChainEvent& PropertyChangedEvent) override;
 
