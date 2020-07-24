@@ -27,17 +27,6 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	TSharedPtr<SWidget> ConstructThumbnailWidget();
 	TSharedPtr<SWidget> ThumbnailWidget;
 
-	// Main data holder
-	FVaultMetadata AssetPublishMetadata;
-
-	//void UpdateAuthorMetadata(const FText& InText, ETextCommit::Type CommitMethod);
-
-	void UpdateUserInputMetadata();
-
-	void UpdateDescriptionMetadata(const FText& InText, ETextCommit::Type CommitMethod);
-
-	void UpdateLastModifiedMetadata(const FText& InText, ETextCommit::Type CommitMethod);
-
 	// Capture Thumbnail from the Screen
 	FReply OnCaptureImageFromViewport();
 
@@ -75,24 +64,24 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 
 	//void OnPrimaryAssetListChanged();
 
-	TSharedPtr<SMultiLineEditableTextBox> OutputLogBox;
+	//TSharedPtr<SMultiLineEditableTextBox> OutputLogBox;
 
 	TArray<FString> GetAssetDependancies(const FName AssetPath) const;
 
-	TSharedPtr<SViewport> ViewportWidget;
-	TSharedPtr<FSceneViewport> ViewportScene;
-	UGameViewportClient* ViewportClient;
-	UWorld* ViewportWorld;
+	//TSharedPtr<SViewport> ViewportWidget;
+	//TSharedPtr<FSceneViewport> ViewportScene;
+	//UGameViewportClient* ViewportClient;
+	//UWorld* ViewportWorld;
 
 	//TSharedPtr<SMultiLineEditableTextBox> PrimaryAssetsBox;
 	TSharedPtr<SMultiLineEditableTextBox> SecondaryAssetsBox;
 
 	// This is the details view for the asset publisher view
-	TSharedPtr<IDetailsView> AssetPublisherDetailsView;
+	//TSharedPtr<IDetailsView> AssetPublisherDetailsView;
 
-	TSharedPtr<IDetailsView> AssetPublisherTagsView;
+	//TSharedPtr<IDetailsView> AssetPublisherTagsView;
 
-	TSharedPtr<FUICommandList> CommandList;
+	//TSharedPtr<FUICommandList> CommandList;
 
 
 	//FText GetPrimaryAssetList() const;
@@ -123,8 +112,10 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	TSharedPtr<SEditableTextBox> PackageNameInput;
 	TSharedPtr<SEditableTextBox> AuthorInput;
 	TSharedPtr<SMultiLineEditableTextBox> DescriptionInput;
-		
 
+	TSharedPtr<SExpandableArea> OutputLogExpandableBox;
+
+	TSharedPtr<SPublisherTagsWidget> TagsWidget;
 
 };
 

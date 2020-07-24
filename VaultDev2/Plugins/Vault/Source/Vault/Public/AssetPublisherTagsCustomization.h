@@ -22,6 +22,9 @@ public:
 
 	// Construct Widget
 	void Construct(const FArguments& InArgs);
+
+	// Our final getter, passing the data into the publishing script.
+	TArray<FString> GetUserSelectedTags();
 	
 	TSharedPtr<SMultiLineEditableTextBox> TagsCustomBox;
 private:
@@ -59,6 +62,8 @@ private:
 	TArray<TSharedPtr<FString>> Items;
 
 	TSharedPtr<IPropertyHandle> TagClassVar;
+
+public:
 
 
 

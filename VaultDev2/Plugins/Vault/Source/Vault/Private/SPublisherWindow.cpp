@@ -120,13 +120,51 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 		.AutoHeight()
 		.Padding(FMargin(0.0, 3.f))
 		[
-			AssetPickerWidget
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			.Padding(FMargin(0, 0, 3, 0))
+			[
+				SNew(STextBlock)
+				.Font(FEditorStyle::Get().GetFontStyle("FontAwesome.12"))
+				.Text_Lambda([this]
+				{
+					return !CurrentlySelectedAsset.IsValid() ?
+						FEditorFontGlyphs::Times_Circle : FEditorFontGlyphs::Check_Circle;
+				})
+				.ColorAndOpacity_Lambda([this]
+				{
+					return !CurrentlySelectedAsset.IsValid() ? FLinearColor::Red : FLinearColor::Green;
+				})
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				AssetPickerWidget
+			]
 		]
 		+ SVerticalBox::Slot()
 		.AutoHeight()
-			.Padding(FMargin(0.0, 3.f))
+		.Padding(FMargin(0.0, 3.f))
 		[
 			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			.Padding(FMargin(0, 0, 3, 0))
+			[
+				SNew(STextBlock)
+				.Font(FEditorStyle::Get().GetFontStyle("FontAwesome.12"))
+				.Text_Lambda([this]
+				{
+					return PackageNameInput->GetText().IsEmpty() ?
+						FEditorFontGlyphs::Times_Circle : FEditorFontGlyphs::Check_Circle;
+				})
+				.ColorAndOpacity_Lambda([this]
+				{
+					return PackageNameInput->GetText().IsEmpty() ? FLinearColor::Red : FLinearColor::Green;
+				})
+			]
+
 			+SHorizontalBox::Slot()
 			[
 				SNew(STextBlock)
@@ -141,9 +179,25 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 
 		+ SVerticalBox::Slot()
 		.AutoHeight()
-			.Padding(FMargin(0.0, 3.f))
+		.Padding(FMargin(0.0, 3.f))
 		[
 			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			.Padding(FMargin(0,0,3,0))
+			[
+				SNew(STextBlock)
+				.Font(FEditorStyle::Get().GetFontStyle("FontAwesome.12"))
+				.Text_Lambda([this] 
+				{ 
+					return AuthorInput->GetText().IsEmpty() ? 
+						FEditorFontGlyphs::Times_Circle : FEditorFontGlyphs::Check_Circle;
+				})
+				.ColorAndOpacity_Lambda([this]
+				{
+					return AuthorInput->GetText().IsEmpty() ? FLinearColor::Red : FLinearColor::Green;
+				})
+			]
 			+ SHorizontalBox::Slot()
 			[
 				SNew(STextBlock)
@@ -162,6 +216,22 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 		[
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			.Padding(FMargin(0, 0, 3, 0))
+			[
+				SNew(STextBlock)
+				.Font(FEditorStyle::Get().GetFontStyle("FontAwesome.12"))
+				.Text_Lambda([this]
+				{
+					return DescriptionInput->GetText().IsEmpty() ?
+						FEditorFontGlyphs::Times_Circle : FEditorFontGlyphs::Check_Circle;
+				})
+				.ColorAndOpacity_Lambda([this]
+				{
+					return DescriptionInput->GetText().IsEmpty() ? FLinearColor::Red : FLinearColor::Green;
+				})
+			]
+			+ SHorizontalBox::Slot()
 			[
 				SNew(STextBlock)
 				.Text(LOCTEXT("DescriptionNameLbl", "Description"))
@@ -178,34 +248,14 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 			.AutoHeight()
 			.Padding(FMargin(0, 5, 0, 0))
 			[
-				SNew(SPublisherTagsWidget)
+				SAssignNew(TagsWidget, SPublisherTagsWidget)
 			]
 		
 		;
 
-	// Command List
-	//CommandList = MakeShareable(new FUICommandList);
-
-	// Get Property Module
-	//FPropertyEditorModule& PropertyEditorModule = FModuleManager::Get().GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-
 	// Store a shared this
 	TWeakPtr<SPublisherWindow> WeakPtr = SharedThis(this);
 
-	// Setup the look
-	//FDetailsViewArgs DetailsViewArgs;
-	//DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
-	//DetailsViewArgs.bAllowSearch = false;
-
-	// Create the Details view widget
-	//AssetPublisherDetailsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
-	//AssetPublisherTagsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
-
-	//AssetPublisherDetailsView->RegisterInstancedCustomPropertyLayout(UAssetPublisher::StaticClass(), FOnGetDetailCustomizationInstance::CreateStatic(&FAssetPublisherTagsCustomization::MakeInstance, WeakPtr));
-	//AssetPublisherDetailsView->SetObject(GetMutableDefault<UAssetPublisher>());
-
-	// #todo dump this and make the function return the SWidget directly.
-	//ConstructThumbnailWidget();
 
 	VaultOutputLog = MakeShareable(new FVaultOutputLog);
 
@@ -328,25 +378,6 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 			]
 		]; // Close VBox
 		
-	//RootWidget->AddSlot()
-	//.HAlign(HAlign_Fill)
-	//.VAlign(VAlign_Fill)
-	//.AutoHeight()
-	//.Padding(0.0)
-	//[
-	//	//AssetPublisherDetailsView.ToSharedRef()
-	//	
-	//];
-
-	//RootWidget->AddSlot()
-	//.HAlign(HAlign_Fill)
-	//.VAlign(VAlign_Fill)
-	//.AutoHeight()
-	//.Padding(0.0)
-	//[
-	//	AssetPublisherTagsView.ToSharedRef()
-	//];
-	
 	RootWidget->AddSlot()
 	.AutoHeight()
 	.HAlign(HAlign_Fill)
@@ -575,21 +606,27 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromFile()
 
 FReply SPublisherWindow::TryPackage()
 {
+
+	// #todo to abstract UI from functionality, much of this code should be reviewed for splitting
+	// this will be important when it comes to python hooks
+	// image writing stands out as one that certainly needs to be reviewed, so python can pass its own img
+
 	UE_LOG(LogVault, Display, TEXT("Starting Packaging Operation"));
 
-	// Get Default Asset - May be expanded to array
-	TSoftObjectPtr<UObject> Asset = GetMutableDefault<UAssetPublisher>()->PrimaryAsset;
+	OutputLogExpandableBox->SetExpanded(true);
 
-	if (!Asset->IsValidLowLevel())
+	// Get Default Asset - May be expanded to array
+	//TSoftObjectPtr<UObject> Asset = GetMutableDefault<UAssetPublisher>()->PrimaryAsset;
+
+	if (!CurrentlySelectedAsset->IsValid())
 	{
 		UE_LOG(LogVault, Error, TEXT("No Asset Selected"));
 		return FReply::Handled();
 	}
 
 	const FString OutputDirectory = FVaultSettings::Get().GetAssetLibraryRoot();
-	const FString ScreenshotPath = OutputDirectory / GetMutableDefault<UAssetPublisher>()->PackName.ToString() + TEXT(".png");
+	const FString ScreenshotPath = OutputDirectory / PackageNameInput->GetText().ToString() + TEXT(".png");
 
-	//FImageUtils::ExportRenderTarget2DAsPNG()
 	FImageWriteOptions Params;
 	Params.bAsync = true;
 	Params.bOverwriteFile = true;
@@ -598,19 +635,18 @@ FReply SPublisherWindow::TryPackage()
 
 	UImageWriteBlueprintLibrary::ExportToDisk(ShotTexture, ScreenshotPath, Params);
 
-
 	
 	// Find AssetData
-	FAssetData AssetPublisherData;
-	UAssetManager::GetIfValid()->GetAssetDataForPath(Asset.ToSoftObjectPath(), AssetPublisherData);
+	//FAssetData AssetPublisherData;
+	//UAssetManager::GetIfValid()->GetAssetDataForPath(Asset.ToSoftObjectPath(), AssetPublisherData);
 
 	// Store PackageName
-	const FString AssetPath = AssetPublisherData.PackageName.ToString();
+	const FString AssetPath = CurrentlySelectedAsset.PackageName.ToString();
 
 	TSet<FString> PublishList;
 
-	TSet<FString> AssetsToProcess = { AssetPublisherData.PackageName.ToString() };
-	AssetsToProcess.Append(GetAssetDependancies(AssetPublisherData.PackageName));
+	TSet<FString> AssetsToProcess = { AssetPath };
+	AssetsToProcess.Append(GetAssetDependancies(CurrentlySelectedAsset.PackageName));
 
 
 	// Loop through all Assets, including the root object, and format into the correct absolute system filename for the UnrealPak operation
@@ -623,11 +659,11 @@ FReply SPublisherWindow::TryPackage()
 		//FString SuperAbs = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*Filename);
 
 		// Find the UPackage to determine the asset type
-		UPackage* Package = FindPackage(nullptr, *AssetPublisherData.PackageName.ToString());
+		UPackage* Package = FindPackage(nullptr, *CurrentlySelectedAsset.PackageName.ToString());
 
 		if (!Package)
 		{
-			UE_LOG(LogVault, Error, TEXT("Unable to find UPackage for %s"), *AssetPublisherData.PackageName.ToString());
+			UE_LOG(LogVault, Error, TEXT("Unable to find UPackage for %s"), *CurrentlySelectedAsset.PackageName.ToString());
 		}
 
 		// Get and append the asset extension
@@ -638,6 +674,41 @@ FReply SPublisherWindow::TryPackage()
 		
 		PublishList.Add(Filename);
 	}
+
+
+	// Build a Struct from the metadata to pass to the packager
+
+	FVaultMetadata AssetPublishMetadata;
+
+	AssetPublishMetadata.Author = AuthorInput.GetText().ToString();
+	AssetPublishMetadata.PackName = PackageNameInput.GetText().ToString();
+	AssetPublishMetadata.Description = DescriptionInput.GetText().ToString();
+	AssetPublishMetadata.CreationDate = FDateTime::UtcNow();
+	AssetPublishMetadata.LastModified = FDateTime::UtcNow();
+
+
+
+	AssetPublisherTagsView->Get
+	TArray<FString> TagArrayParsed;
+	GetMutableDefault<UAssetPublisherTags>()->TagsListInternal.ParseIntoArray(TagArrayParsed, TEXT(","));
+
+	//TSet<FString> Array;
+	//Array.Append(TagArrayParsed);
+
+
+	//AssetPublishMetadata.Tags = Array;
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	UpdateUserInputMetadata();
@@ -740,9 +811,9 @@ TSharedRef<SWidget> SPublisherWindow::ConstructOutputLog()
 {
 	VaultOutputLog->OnVaultMessageReceived.BindRaw(this, &SPublisherWindow::RefreshOutputLogList);
 
-	return SNew(SExpandableArea)
-	.InitiallyCollapsed(false)
-	.MaxHeight(300.f)
+	return SAssignNew(OutputLogExpandableBox, SExpandableArea)
+	.InitiallyCollapsed(true)
+	.MaxHeight(200.f)
 	.HeaderContent()
 	[
 		SNew(STextBlock)
@@ -754,15 +825,24 @@ TSharedRef<SWidget> SPublisherWindow::ConstructOutputLog()
 		.Orientation(Orient_Vertical)
 		+ SScrollBox::Slot()
 		[
-			SAssignNew(VaultOutputLogList, SListView<TSharedPtr< FVaultLogMessage>>)
-			.ListItemsSource(&VaultOutputLog->MessageList)
-			.OnGenerateRow(this, &SPublisherWindow::HandleVaultLogGenerateRow)
-			.ItemHeight(24)
-			.SelectionMode(ESelectionMode::Multi)
-			.HeaderRow(SNew(SHeaderRow)
-			.Visibility(EVisibility::Collapsed)
-			+ SHeaderRow::Column("Log")
-			.DefaultLabel(LOCTEXT("VaultLogHeaderLbl", "Output Log")))
+			SNew(SBox)
+			.MinDesiredHeight(FOptionalSize(200.f))
+			[
+				SNew(SBorder)
+				.BorderImage(FEditorStyle::GetBrush("Menu.Background"))
+
+				[
+					SAssignNew(VaultOutputLogList, SListView<TSharedPtr< FVaultLogMessage>>)
+					.ListItemsSource(&VaultOutputLog->MessageList)
+					.OnGenerateRow(this, &SPublisherWindow::HandleVaultLogGenerateRow)
+					.ItemHeight(24)
+					.SelectionMode(ESelectionMode::Multi)
+					.HeaderRow(SNew(SHeaderRow)
+					.Visibility(EVisibility::Collapsed)
+					+ SHeaderRow::Column("Log")
+					.DefaultLabel(LOCTEXT("VaultLogHeaderLbl", "Output Log")))
+				]
+			]
 		]
 	];
 
@@ -793,6 +873,7 @@ void SPublisherWindow::OnAssetSelected(const FAssetData& InAssetData)
 	// #todo something
 }
 
+
 //FText SPublisherWindow::GetPrimaryAssetList() const
 //{
 //	TSoftObjectPtr<UObject> Asset = GetMutableDefault<UAssetPublisher>()->PrimaryAsset;
@@ -811,21 +892,7 @@ void SPublisherWindow::UpdateLastModifiedMetadata(const FText& InText, ETextComm
 
 void SPublisherWindow::UpdateUserInputMetadata()
 {
-	AssetPublishMetadata.Author = GetMutableDefault<UAssetPublisher>()->Author;
-	AssetPublishMetadata.PackName = GetMutableDefault<UAssetPublisher>()->PackName;
-	AssetPublishMetadata.Description = GetMutableDefault<UAssetPublisher>()->Description;
-	AssetPublishMetadata.CreationDate = FDateTime::UtcNow();
-	AssetPublishMetadata.LastModified = FDateTime::UtcNow();
-
-	//AssetPublisherTagsView->Get
-	//TArray<FString> TagArrayParsed;
-	//GetMutableDefault<UAssetPublisherTags>()->TagsListInternal.ParseIntoArray(TagArrayParsed, TEXT(","));
-
-	//TSet<FString> Array;
-	//Array.Append(TagArrayParsed);
-
-
-	//AssetPublishMetadata.Tags = Array;
+	
 }
 
 void SPublisherWindow::UpdateDescriptionMetadata(const FText& InText, ETextCommit::Type CommitMethod)

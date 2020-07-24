@@ -101,6 +101,11 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 
 
 
+TArray<FString> SPublisherTagsWidget::GetUserSelectedTags()
+{
+	TagsListInternal
+}
+
 void SPublisherTagsWidget::OnTagSearchTextChanged(const FText& InFilterText)
 {
 	TagTextFilterPtr->SetFilterText(InFilterText);
@@ -187,6 +192,7 @@ TSharedRef<ITableRow> SPublisherTagsWidget::MakeTagRow(TSharedPtr<FString> Item,
 			]
 		];
 }
+
 
 void SPublisherTagsWidget::RefreshTagPool()
 {
