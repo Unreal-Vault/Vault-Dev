@@ -113,6 +113,19 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 
 	void RefreshOutputLogList();
 
+	FAssetData CurrentlySelectedAsset;
+	FString GetCurrentAssetPath() const;
+	void OnAssetSelected(const FAssetData& InAssetData);
+
+
+
+	// New user entry stuff
+	TSharedPtr<SEditableTextBox> PackageNameInput;
+	TSharedPtr<SEditableTextBox> AuthorInput;
+	TSharedPtr<SMultiLineEditableTextBox> DescriptionInput;
+		
+
+
 };
 
 

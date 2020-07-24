@@ -1,8 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AssetPublisherTagsCustomization.h"
-#include "DetailLayoutBuilder.h"
-#include "DetailCategoryBuilder.h"
 #include "Widgets/Input/SEditableTextBox.h"
 #include "DetailWidgetRow.h"
 #include "AssetPublisher.h"
@@ -15,20 +13,14 @@
 static const FName TagsListColumnName(TEXT("Tags"));
 #define LOCTEXT_NAMESPACE "FVaultPublisherTagsCustomization"
 
-void FAssetPublisherTagsCustomization::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
+void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 {
 	TagTextFilterPtr = MakeShareable(new FTextFilterExpressionEvaluator(ETextFilterExpressionEvaluatorMode::BasicString));
 	
 	// Refresh available tags into our array from the json file
 	RefreshTagPool();
 
-	// Force Vault Category to show first by calling its edit.
-	DetailBuilder.EditCategory(TEXT("Vault"));
-
-	// Replace existing variable display with a new whole row customization
-	DetailBuilder.EditCategory(TEXT("Tags"))
-		.InitiallyCollapsed(true)
-		.AddCustomRow(FText::FromString(TEXT("TagsPool"))).WholeRowContent()
+	TSharedRef<SBox> TagsWidget = SNew(SBox)
 	[
 
 		// Tags Slot Root
@@ -55,7 +47,7 @@ void FAssetPublisherTagsCustomization::CustomizeDetails(IDetailLayoutBuilder& De
 					.HintText(LOCTEXT("TagsUserEntry", "Comma Separated Tags"))
 					.AutoWrapText(true)
 					.IsReadOnly(false)
-					.OnTextCommitted(this, &FAssetPublisherTagsCustomization::UpdateUserTagsMetadata)
+					.OnTextCommitted(this, &SPublisherTagsWidget::UpdateUserTagsMetadata)
 				]
 
 
@@ -71,8 +63,8 @@ void FAssetPublisherTagsCustomization::CustomizeDetails(IDetailLayoutBuilder& De
 					.AutoHeight()
 					[
 						SAssignNew(TagSearchBox, SSearchBox)
-						.OnTextChanged(this, &FAssetPublisherTagsCustomization::OnTagSearchTextChanged)
-						.OnTextCommitted(this, &FAssetPublisherTagsCustomization::OnTagSearchTextCommitted)
+						.OnTextChanged(this, &SPublisherTagsWidget::OnTagSearchTextChanged)
+						.OnTextCommitted(this, &SPublisherTagsWidget::OnTagSearchTextCommitted)
 					]
 
 					+ SVerticalBox::Slot()
@@ -81,9 +73,9 @@ void FAssetPublisherTagsCustomization::CustomizeDetails(IDetailLayoutBuilder& De
 						SAssignNew(KeysList, SListView<TSharedPtr<FString>>)
 						.SelectionMode(ESelectionMode::Single)
 						.ListItemsSource(&Items)
-						.OnGenerateRow(this, &FAssetPublisherTagsCustomization::MakeTagRow)
+						.OnGenerateRow(this, &SPublisherTagsWidget::MakeTagRow)
 						.ItemHeight(12.f)
-						.OnMouseButtonClick(this, &FAssetPublisherTagsCustomization::AddTagFromPool)
+						.OnMouseButtonClick(this, &SPublisherTagsWidget::AddTagFromPool)
 						.HeaderRow
 						(
 							SNew(SHeaderRow)
@@ -97,27 +89,19 @@ void FAssetPublisherTagsCustomization::CustomizeDetails(IDetailLayoutBuilder& De
 
 		] // End tag section
 
-
-
-
-
 	];
 
-	DetailBuilder.EditCategory(TEXT("Package List"));
 
-	DetailBuilder.EditCategory(TEXT("Output Log"))
-		.AddCustomRow(FText::FromString(TEXT("TagsPool"))).WholeRowContent()
+	ChildSlot
 		[
-			SNew(SVerticalBox)
-			+SVerticalBox::Slot()
-			[
-				SNew(SMultiLineEditableTextBox)
-				.IsReadOnly(true)
-			]
+			TagsWidget
 		];
+
 }
 
-void FAssetPublisherTagsCustomization::OnTagSearchTextChanged(const FText& InFilterText)
+
+
+void SPublisherTagsWidget::OnTagSearchTextChanged(const FText& InFilterText)
 {
 	TagTextFilterPtr->SetFilterText(InFilterText);
 	TagSearchBox->SetError(TagTextFilterPtr->GetFilterErrorText());
@@ -125,11 +109,11 @@ void FAssetPublisherTagsCustomization::OnTagSearchTextChanged(const FText& InFil
 	RefreshTagPool();
 }
 
-void FAssetPublisherTagsCustomization::OnTagSearchTextCommitted(const FText& InFilterText, ETextCommit::Type CommitInfo)
+void SPublisherTagsWidget::OnTagSearchTextCommitted(const FText& InFilterText, ETextCommit::Type CommitInfo)
 {
 }
 
-void FAssetPublisherTagsCustomization::AddTagFromPool(TSharedPtr<FString> InTag)
+void SPublisherTagsWidget::AddTagFromPool(TSharedPtr<FString> InTag)
 {
 	// Store the entire string list that's already there so we can append to it.
 	const FString ExistingString = TagsCustomBox->GetText().ToString();
@@ -161,7 +145,7 @@ void FAssetPublisherTagsCustomization::AddTagFromPool(TSharedPtr<FString> InTag)
 	UpdateUserTagsMetadata(TagsCustomBox->GetText(), ETextCommit::Default);
 }
 
-void FAssetPublisherTagsCustomization::UpdateUserTagsMetadata(const FText& InText, ETextCommit::Type CommitMethod)
+void SPublisherTagsWidget::UpdateUserTagsMetadata(const FText& InText, ETextCommit::Type CommitMethod)
 {
 	// #todo update tag list internals
 	UE_LOG(LogTemp, Warning, TEXT("tags changed!!"));
@@ -192,7 +176,7 @@ private:
 };
 
 // Construct Tag Row
-TSharedRef<ITableRow> FAssetPublisherTagsCustomization::MakeTagRow(TSharedPtr<FString> Item, const TSharedRef<STableViewBase>& OwnerTable)
+TSharedRef<ITableRow> SPublisherTagsWidget::MakeTagRow(TSharedPtr<FString> Item, const TSharedRef<STableViewBase>& OwnerTable)
 {
 	return SNew(STableRow<TSharedPtr<FString> >, OwnerTable)
 		[
@@ -204,7 +188,7 @@ TSharedRef<ITableRow> FAssetPublisherTagsCustomization::MakeTagRow(TSharedPtr<FS
 		];
 }
 
-void FAssetPublisherTagsCustomization::RefreshTagPool()
+void SPublisherTagsWidget::RefreshTagPool()
 {
 
 	//#todo this might run every tag, so clearing and updating the array for every single tag. i think this is wrong and should happen at construct start?

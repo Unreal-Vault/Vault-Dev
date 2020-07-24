@@ -3,39 +3,26 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "IDetailCustomization.h"
-#include "Types/SlateEnums.h"
-#include "Slate.h"
-#include "SlateExtras.h"
-#include "IDetailsView.h"
+#include "SlateFwd.h"
 #include "Misc/TextFilterExpressionEvaluator.h"
 #include "VaultTypes.h"
 
-class IDetailLayoutBuilder;
 class FUICommandInfo;
 class SWidget;
 class SEditableTextBox;
 class SPublisherWindow;
-class IPropertyHandle;
+class SMultiLineEditableTextBox;
 
-class FAssetPublisherTagsCustomization : public IDetailCustomization
+class VAULT_API SPublisherTagsWidget : public SCompoundWidget
 {
 public:
 
-	static TSharedRef<IDetailCustomization> MakeInstance(TWeakPtr<SPublisherWindow> InSequenceRecorder)
-	{
-		return MakeShareable(new FAssetPublisherTagsCustomization(InSequenceRecorder));
-	}
+	SLATE_BEGIN_ARGS(SPublisherTagsWidget) {}
+	SLATE_END_ARGS()
 
-
-	FAssetPublisherTagsCustomization(TWeakPtr<SPublisherWindow> InPublisherWindow)
-	{
-		PublisherWindow = InPublisherWindow;
-	}
-
-
-	virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;
-
+	// Construct Widget
+	void Construct(const FArguments& InArgs);
+	
 	TSharedPtr<SMultiLineEditableTextBox> TagsCustomBox;
 private:
 
@@ -48,6 +35,7 @@ private:
 
 	
 	TSharedPtr<SSearchBox> TagSearchBox;
+	
 	/* The actual UI list */
 	TSharedPtr< SListView< TSharedPtr<FString> > > KeysList;
 
@@ -57,6 +45,7 @@ private:
 
 	// Tag Search Bits
 	void RefreshTagPool();
+
 	TSharedPtr<FTextFilterExpressionEvaluator> TagTextFilterPtr;
 
 	void AddTagFromPool(TSharedPtr<FString> InTag);

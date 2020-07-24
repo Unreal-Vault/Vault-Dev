@@ -37,9 +37,11 @@
 #include <EditorSupportDelegates.h>
 #include "IDesktopPlatform.h"
 #include "DesktopPlatformModule.h"
+#include "PropertyCustomizationHelpers.h"
 
+#include "Widgets/Input/SEditableTextBox.h"
 
-
+#include "EditorFontGlyphs.h"
 #include "ImageWriteBlueprintLibrary.h"
 
 
@@ -98,26 +100,109 @@ private:
 
 void SPublisherWindow::Construct(const FArguments& InArgs)
 {
+	
+	// Our Asset Picking Widget
+	TSharedRef<SWidget> AssetPickerWidget = SNew(SObjectPropertyEntryBox)
+		.ObjectPath(this, &SPublisherWindow::GetCurrentAssetPath)
+		.AllowedClass(UObject::StaticClass())
+		.OnObjectChanged(this, &SPublisherWindow::OnAssetSelected)
+		.AllowClear(false)
+		.DisplayUseSelected(true)
+		.DisplayBrowse(true)
+		.NewAssetFactories(TArray<UFactory*>())
+		.IsEnabled(true)
+		;
+
+	// Left SideBar
+
+	TSharedRef<SVerticalBox> LeftPanel = SNew(SVerticalBox)
+		+SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(FMargin(0.0, 3.f))
+		[
+			AssetPickerWidget
+		]
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+			.Padding(FMargin(0.0, 3.f))
+		[
+			SNew(SHorizontalBox)
+			+SHorizontalBox::Slot()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("PackageNameLbl", "Package Name"))
+			]
+			+SHorizontalBox::Slot()
+			[
+				SAssignNew(PackageNameInput, SEditableTextBox)
+				.HintText(LOCTEXT("PackageNameHintTxt", "Package Name"))
+			]
+		]
+
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+			.Padding(FMargin(0.0, 3.f))
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("AuthorNameLbl", "Author"))
+			]
+			+ SHorizontalBox::Slot()
+			[
+				SAssignNew(AuthorInput, SEditableTextBox)
+				.HintText(LOCTEXT("AuthorNameHintTxt", "Author Name"))
+			]
+		]
+
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(FMargin(0.0, 3.f))
+		[
+			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("DescriptionNameLbl", "Description"))
+			]
+			+ SHorizontalBox::Slot()
+			[
+				SAssignNew(DescriptionInput, SMultiLineEditableTextBox)
+				.HintText(LOCTEXT("DescriptionNameHintTxt", "Enter Description"))
+			]
+		]
+
+		// tags
+		+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(FMargin(0, 5, 0, 0))
+			[
+				SNew(SPublisherTagsWidget)
+			]
+		
+		;
+
 	// Command List
-	CommandList = MakeShareable(new FUICommandList);
+	//CommandList = MakeShareable(new FUICommandList);
 
 	// Get Property Module
-	FPropertyEditorModule& PropertyEditorModule = FModuleManager::Get().GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+	//FPropertyEditorModule& PropertyEditorModule = FModuleManager::Get().GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
 	// Store a shared this
 	TWeakPtr<SPublisherWindow> WeakPtr = SharedThis(this);
 
 	// Setup the look
-	FDetailsViewArgs DetailsViewArgs;
-	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
-	DetailsViewArgs.bAllowSearch = false;
+	//FDetailsViewArgs DetailsViewArgs;
+	//DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
+	//DetailsViewArgs.bAllowSearch = false;
 
 	// Create the Details view widget
-	AssetPublisherDetailsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
-	AssetPublisherTagsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
+	//AssetPublisherDetailsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
+	//AssetPublisherTagsView = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
 
-	AssetPublisherDetailsView->RegisterInstancedCustomPropertyLayout(UAssetPublisher::StaticClass(), FOnGetDetailCustomizationInstance::CreateStatic(&FAssetPublisherTagsCustomization::MakeInstance, WeakPtr));
-	AssetPublisherDetailsView->SetObject(GetMutableDefault<UAssetPublisher>());
+	//AssetPublisherDetailsView->RegisterInstancedCustomPropertyLayout(UAssetPublisher::StaticClass(), FOnGetDetailCustomizationInstance::CreateStatic(&FAssetPublisherTagsCustomization::MakeInstance, WeakPtr));
+	//AssetPublisherDetailsView->SetObject(GetMutableDefault<UAssetPublisher>());
 
 	// #todo dump this and make the function return the SWidget directly.
 	//ConstructThumbnailWidget();
@@ -135,14 +220,15 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 		[
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
+			.FillWidth(1)
+			.Padding(FMargin(5.0, 5.0, 20.0, 5.f))
 			[
-				// left panel
-				SNew(STextBlock)
-				.Text(LOCTEXT("vdsfvdfv", "Holder"))
-
+				// Left Side Slot
+				LeftPanel
 			]
 			+SHorizontalBox::Slot()
 			.HAlign(HAlign_Right)
+			.AutoWidth()
 			[
 				// Left Panel
 				SNew(SVerticalBox)
@@ -162,64 +248,104 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 						// Take Screenshot From World
 						SNew(SButton)
 						.ContentPadding(FMargin(6.f))
-						.Text(LOCTEXT("TakeScreenshotLbl", "Capture From Viewport"))
 						.ButtonStyle(FEditorStyle::Get(), "FlatButton.Primary")
-						.TextStyle(FEditorStyle::Get(), "NormalText.Important")
 						.OnClicked(this, &SPublisherWindow::OnCaptureImageFromViewport)
+						[
+							SNew(SHorizontalBox)
+							+ SHorizontalBox::Slot()
+							.AutoWidth()
+							[
+								SNew(STextBlock)
+								.Font(FEditorStyle::Get().GetFontStyle("FontAwesome.12"))
+								.TextStyle(FEditorStyle::Get(), "NormalText.Important")
+								.Text(FEditorFontGlyphs::Camera)
+							]
+
+							+ SHorizontalBox::Slot()
+							.FillWidth(1)
+							.Padding(FMargin(5, 0, 0, 0))
+							[
+								SNew(STextBlock)
+								.TextStyle(FEditorStyle::Get(), "NormalText.Important")
+								.Text(LOCTEXT("TakeScreenshotLbl", "Capture Viewport"))
+							]
+						]
 					]
 					+ SHorizontalBox::Slot()
 					.Padding(FMargin(1.f, 0.f, 0.f, 0.f))
 					[
 						SNew(SButton)
 						.ContentPadding(FMargin(6.f))
-						.Text(LOCTEXT("LoadScreenshotFromFileLbl", "Load From File"))
 						.ButtonStyle(FEditorStyle::Get(), "FlatButton.Primary")
-						.TextStyle(FEditorStyle::Get(), "NormalText.Important")
 						.OnClicked(this, &SPublisherWindow::OnCaptureImageFromFile)
+						[
+							SNew(SHorizontalBox)
+							+SHorizontalBox::Slot()
+							.AutoWidth()
+							[
+								SNew(STextBlock)
+								.Font(FEditorStyle::Get().GetFontStyle("FontAwesome.12"))
+								.TextStyle(FEditorStyle::Get(), "NormalText.Important")
+								.Text(FEditorFontGlyphs::File_Image_O)
+
+							]
+							+ SHorizontalBox::Slot()
+							.FillWidth(1)
+							.Padding(FMargin(5,0,0,0))
+							[
+								SNew(STextBlock)
+								.TextStyle(FEditorStyle::Get(), "NormalText.Important")
+								.Text(LOCTEXT("LoadScreenshotFromFileLbl", "Load From File"))
+							]
+						]
 					]
 				]
 				+ SVerticalBox::Slot()
-					.AutoHeight()
-					.Padding(FMargin(0, 5, 0, 0))
+				.AutoHeight()
+				.Padding(FMargin(0, 5, 0, 0))
+				[
+					SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot()
+					.Padding(FMargin(0.f, 0.f, 1.f, 0.f))
 					[
-						SNew(SHorizontalBox)
-						+ SHorizontalBox::Slot()
-						.Padding(FMargin(0.f, 0.f, 1.f, 0.f))
-						[
-							SNew(SButton)
-							.Text(LOCTEXT("GeneratePythonMapLabel", "Generate Map from Python"))
-							.ButtonStyle(FEditorStyle::Get(), "FlatButton.Info")
-							//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
-						]
-						+ SHorizontalBox::Slot()
-						.Padding(FMargin(1.f, 0.f, 0.f, 0.f))
-						[
-							SNew(SButton)
-							.Text(LOCTEXT("LoadPresetMapLabel", "Load Map from Preset Map"))
-							.ButtonStyle(FEditorStyle::Get(), "FlatButton.Info")
-							//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
-						]
+						SNew(SButton)
+						.Text(LOCTEXT("GeneratePythonMapLabel", "Generate Map from Python"))
+						.ButtonStyle(FEditorStyle::Get(), "FlatButton.Info")
+						//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
 					]
+					+ SHorizontalBox::Slot()
+					.Padding(FMargin(1.f, 0.f, 0.f, 0.f))
+					[
+						SNew(SButton)
+						.Text(LOCTEXT("LoadPresetMapLabel", "Load Map from Preset Map"))
+						.ButtonStyle(FEditorStyle::Get(), "FlatButton.Info")
+						//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
+					]
+				]
+
+
+
 			]
 		]; // Close VBox
 		
-	RootWidget->AddSlot()
-	.HAlign(HAlign_Fill)
-	.VAlign(VAlign_Fill)
-	.AutoHeight()
-	.Padding(0.0)
-	[
-		AssetPublisherDetailsView.ToSharedRef()
-	];
+	//RootWidget->AddSlot()
+	//.HAlign(HAlign_Fill)
+	//.VAlign(VAlign_Fill)
+	//.AutoHeight()
+	//.Padding(0.0)
+	//[
+	//	//AssetPublisherDetailsView.ToSharedRef()
+	//	
+	//];
 
-	RootWidget->AddSlot()
-	.HAlign(HAlign_Fill)
-	.VAlign(VAlign_Fill)
-	.AutoHeight()
-	.Padding(0.0)
-	[
-		AssetPublisherTagsView.ToSharedRef()
-	];
+	//RootWidget->AddSlot()
+	//.HAlign(HAlign_Fill)
+	//.VAlign(VAlign_Fill)
+	//.AutoHeight()
+	//.Padding(0.0)
+	//[
+	//	AssetPublisherTagsView.ToSharedRef()
+	//];
 	
 	RootWidget->AddSlot()
 	.AutoHeight()
@@ -654,6 +780,17 @@ void SPublisherWindow::RefreshOutputLogList()
 	{
 		VaultOutputLogList->RebuildList();
 	}
+}
+
+FString SPublisherWindow::GetCurrentAssetPath() const
+{
+	return CurrentlySelectedAsset.IsValid() ? CurrentlySelectedAsset.ObjectPath.ToString() : FString("");
+}
+
+void SPublisherWindow::OnAssetSelected(const FAssetData& InAssetData)
+{
+	CurrentlySelectedAsset = InAssetData;
+	// #todo something
 }
 
 //FText SPublisherWindow::GetPrimaryAssetList() const
