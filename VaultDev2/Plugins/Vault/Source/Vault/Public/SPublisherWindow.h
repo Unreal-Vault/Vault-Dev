@@ -115,7 +115,7 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 
 	TSharedPtr<SExpandableArea> OutputLogExpandableBox;
 
-	TSharedPtr<SPublisherTagsWidget> TagsWidget;
+	TSharedPtr<class SPublisherTagsWidget> TagsWidget;
 
 };
 

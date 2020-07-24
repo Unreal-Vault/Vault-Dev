@@ -618,7 +618,7 @@ FReply SPublisherWindow::TryPackage()
 	// Get Default Asset - May be expanded to array
 	//TSoftObjectPtr<UObject> Asset = GetMutableDefault<UAssetPublisher>()->PrimaryAsset;
 
-	if (!CurrentlySelectedAsset->IsValid())
+	if (!CurrentlySelectedAsset.IsValid())
 	{
 		UE_LOG(LogVault, Error, TEXT("No Asset Selected"));
 		return FReply::Handled();
@@ -677,41 +677,17 @@ FReply SPublisherWindow::TryPackage()
 
 
 	// Build a Struct from the metadata to pass to the packager
-
 	FVaultMetadata AssetPublishMetadata;
 
-	AssetPublishMetadata.Author = AuthorInput.GetText().ToString();
-	AssetPublishMetadata.PackName = PackageNameInput.GetText().ToString();
-	AssetPublishMetadata.Description = DescriptionInput.GetText().ToString();
+	AssetPublishMetadata.Author = FName(*AuthorInput->GetText().ToString());
+	AssetPublishMetadata.PackName = FName(*PackageNameInput->GetText().ToString());
+	AssetPublishMetadata.Description = DescriptionInput->GetText().ToString();
 	AssetPublishMetadata.CreationDate = FDateTime::UtcNow();
 	AssetPublishMetadata.LastModified = FDateTime::UtcNow();
 
+	AssetPublishMetadata.Tags = TagsWidget->GetUserSelectedTags();
 
 
-	AssetPublisherTagsView->Get
-	TArray<FString> TagArrayParsed;
-	GetMutableDefault<UAssetPublisherTags>()->TagsListInternal.ParseIntoArray(TagArrayParsed, TEXT(","));
-
-	//TSet<FString> Array;
-	//Array.Append(TagArrayParsed);
-
-
-	//AssetPublishMetadata.Tags = Array;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	UpdateUserInputMetadata();
 	UAssetPublisher::PackageSelected(PublishList, AssetPublishMetadata);
 	return FReply::Handled();
 }
@@ -869,8 +845,8 @@ FString SPublisherWindow::GetCurrentAssetPath() const
 
 void SPublisherWindow::OnAssetSelected(const FAssetData& InAssetData)
 {
+	// #todo lambda this for simpler code?
 	CurrentlySelectedAsset = InAssetData;
-	// #todo something
 }
 
 
@@ -884,21 +860,6 @@ void SPublisherWindow::OnAssetSelected(const FAssetData& InAssetData)
 //	}
 //	return FText::GetEmpty();
 //}
-
-void SPublisherWindow::UpdateLastModifiedMetadata(const FText& InText, ETextCommit::Type CommitMethod)
-{
-	AssetPublishMetadata.LastModified = FDateTime::UtcNow();
-}
-
-void SPublisherWindow::UpdateUserInputMetadata()
-{
-	
-}
-
-void SPublisherWindow::UpdateDescriptionMetadata(const FText& InText, ETextCommit::Type CommitMethod)
-{
-	//AssetPublishMetadata.Description = InText;
-}
 
 
 #undef LOCTEXT_NAMESPACE

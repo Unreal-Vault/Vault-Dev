@@ -10,19 +10,19 @@
 #include "SlateExtras.h"
 #include "VaultSettings.h"
 
-static const FName TagsListColumnName(TEXT("Tags"));
 #define LOCTEXT_NAMESPACE "FVaultPublisherTagsCustomization"
+
+static const FName TagsListColumnName(TEXT("Tags"));
 
 void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 {
 	TagTextFilterPtr = MakeShareable(new FTextFilterExpressionEvaluator(ETextFilterExpressionEvaluatorMode::BasicString));
 	
 	// Refresh available tags into our array from the json file
-	RefreshTagPool();
+	CacheBaseTagsPool();
 
 	TSharedRef<SBox> TagsWidget = SNew(SBox)
 	[
-
 		// Tags Slot Root
 		SNew(SVerticalBox)
 		+SVerticalBox::Slot()
@@ -32,13 +32,11 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 		.Padding(2.0f)
 		[
 			SNew(SBox)
-			.MinDesiredHeight(30.f)
-		    .MaxDesiredHeight(200.f)
+			.MinDesiredHeight(160.f)
+		    .MaxDesiredHeight(160.f)
 			[
 				SNew(SHorizontalBox)
-
-				// Tags Left - User Entry				
-				+ SHorizontalBox::Slot()
+				+ SHorizontalBox::Slot() // User Entry Box Left
 				.Padding(2.f, 2.f)
 				.FillWidth(1.0f)
 				.HAlign(HAlign_Fill)
@@ -47,12 +45,8 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 					.HintText(LOCTEXT("TagsUserEntry", "Comma Separated Tags"))
 					.AutoWrapText(true)
 					.IsReadOnly(false)
-					.OnTextCommitted(this, &SPublisherTagsWidget::UpdateUserTagsMetadata)
 				]
-
-
-				// Tags Right - Tag Pool
-				+ SHorizontalBox::Slot()
+				+ SHorizontalBox::Slot() // Tags Right - Tag Pool
 				.Padding(2.f, 2.f)
 				.FillWidth(1.0f)
 				.HAlign(HAlign_Fill)
@@ -72,7 +66,7 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 					[
 						SAssignNew(KeysList, SListView<TSharedPtr<FString>>)
 						.SelectionMode(ESelectionMode::Single)
-						.ListItemsSource(&Items)
+						.ListItemsSource(&TagsListItems)
 						.OnGenerateRow(this, &SPublisherTagsWidget::MakeTagRow)
 						.ItemHeight(12.f)
 						.OnMouseButtonClick(this, &SPublisherTagsWidget::AddTagFromPool)
@@ -84,26 +78,26 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 							.DefaultLabel(LOCTEXT("headerLabel", "Tag List"))
 						)
 					]
-				]
-		]
-
+				] // end hbox slot
+			] // end sbox
 		] // End tag section
-
 	];
-
 
 	ChildSlot
 		[
 			TagsWidget
 		];
-
 }
 
 
 
-TArray<FString> SPublisherTagsWidget::GetUserSelectedTags()
+TSet<FString> SPublisherTagsWidget::GetUserSelectedTags()
 {
-	TagsListInternal
+	const FString TagString = TagsCustomBox->GetText().ToString();
+	TArray<FString> TagArrayParsed;
+	TagString.ParseIntoArray(TagArrayParsed, TEXT(","));
+	TSet<FString> TagSet = TSet<FString>(TagArrayParsed);
+	return TagSet;
 }
 
 void SPublisherTagsWidget::OnTagSearchTextChanged(const FText& InFilterText)
@@ -116,6 +110,21 @@ void SPublisherTagsWidget::OnTagSearchTextChanged(const FText& InFilterText)
 
 void SPublisherTagsWidget::OnTagSearchTextCommitted(const FText& InFilterText, ETextCommit::Type CommitInfo)
 {
+
+}
+
+void SPublisherTagsWidget::CacheBaseTagsPool()
+{
+	// Cache our JSON Tags
+	FVaultSettings::Get().ReadVaultTags(TagsListCache);
+
+	// Create a clean list of Live Tags for the untouched view
+	// We don't want to use the RefreshTagPool as it has ptr's that are still null
+	for (auto CacheTag : TagsListCache)
+	{
+		TagsListItems.Add(MakeShareable(new FString(CacheTag)));
+	}
+
 }
 
 void SPublisherTagsWidget::AddTagFromPool(TSharedPtr<FString> InTag)
@@ -123,10 +132,9 @@ void SPublisherTagsWidget::AddTagFromPool(TSharedPtr<FString> InTag)
 	// Store the entire string list that's already there so we can append to it.
 	const FString ExistingString = TagsCustomBox->GetText().ToString();
 
+	// Avoid Duplicate Tags
 	if (ExistingString.Contains(*InTag.Get()))
 	{
-		// error, tag already contained. 
-		// #todo add some sort of error message, like the lil red bar with "already included"
 		return;
 	}
 
@@ -147,13 +155,7 @@ void SPublisherTagsWidget::AddTagFromPool(TSharedPtr<FString> InTag)
 
 	// Update Tag box with new string info
 	TagsCustomBox->SetText(FText::FromString(UpdatedString));
-	UpdateUserTagsMetadata(TagsCustomBox->GetText(), ETextCommit::Default);
-}
 
-void SPublisherTagsWidget::UpdateUserTagsMetadata(const FText& InText, ETextCommit::Type CommitMethod)
-{
-	// #todo update tag list internals
-	UE_LOG(LogTemp, Warning, TEXT("tags changed!!"));
 
 }
 
@@ -173,6 +175,7 @@ public:
 
 	virtual bool TestComplexExpression(const FName& InKey, const FTextFilterString& InValue, const ETextFilterComparisonOperation InComparisonOperation, const ETextFilterTextComparisonMode InTextComparisonMode) const override
 	{
+		// Not Required or implemented.
 		return false;
 	}
 
@@ -196,34 +199,25 @@ TSharedRef<ITableRow> SPublisherTagsWidget::MakeTagRow(TSharedPtr<FString> Item,
 
 void SPublisherTagsWidget::RefreshTagPool()
 {
+	// Clear Existing List of Live Tags.
+	TagsListItems.Empty();
 
-	//#todo this might run every tag, so clearing and updating the array for every single tag. i think this is wrong and should happen at construct start?
-	// Get existing tags and stored as shared ptrs
-	Items.Empty();
-
-	// Get tags
-	TSet<FString> ExistingTagsString;
-	FVaultSettings::Get().ReadVaultTags(ExistingTagsString);
-
-	for (auto TagString : ExistingTagsString)
+	for (auto TagToTest : TagsListCache)
 	{
-		const FText FilterText = TagTextFilterPtr->GetFilterText();
-
-		if (FilterText.IsEmpty())
+		if (TagSearchBox.IsValid() == false || TagSearchBox->GetText().IsEmpty())
 		{
-			Items.Add(MakeShareable(new FString(TagString)));
+			TagsListItems.Add(MakeShareable(new FString(TagToTest)));
 		}
 		else
 		{
-			if (TagTextFilterPtr->TestTextFilter(FTagFilterContext(TagString)))
+			if (TagTextFilterPtr->TestTextFilter(FTagFilterContext(TagToTest)))
 			{
-				Items.Add(MakeShareable(new FString(TagString)));
+				TagsListItems.Add(MakeShareable(new FString(TagToTest)));
 			}
 		}
-
 	}
 
-	//KeysList->RequestListRefresh;
+	KeysList->RebuildList();
 }
 
 

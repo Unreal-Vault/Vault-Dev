@@ -15,7 +15,7 @@ FVaultOutputLog::FVaultOutputLog()
 	AcceptedLogCategories = 
 	{
 		FName(TEXT("LogVault")), 
-		FName(TEXT("LogPakFiles"))
+		FName(TEXT("LogPakFile"))
 	};
 }
 
@@ -47,10 +47,8 @@ bool FVaultOutputLog::CreateLogMessages(const TCHAR* V, ELogVerbosity::Type Verb
 
 		if (AcceptedLogCategories.Contains(Category))
 		{
-			UE_LOG(LogTemp, Error, TEXT("Found the right category"));
 			MessageList.Add(NewMessage);
 		}
-
 		
 		return true;
 	}
