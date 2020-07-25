@@ -28,7 +28,7 @@ Binaries/
 Intermediate/
 .vs/
 Saved/
-*Content/
+
 
 
 # Logs and databases #
@@ -76,4 +76,4 @@ VaultDev/VaultDev.sln
 
 
 
-Content
+VaultDev2/Content/
