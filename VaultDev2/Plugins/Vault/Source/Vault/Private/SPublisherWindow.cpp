@@ -440,6 +440,15 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 
 }
 
+SPublisherWindow::~SPublisherWindow()
+{
+	if (ShotTexture)
+	{
+		DestroyThumbnail();
+		//FlushRenderingCommands();
+	}
+}
+
 void SPublisherWindow::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
 {
 
@@ -474,7 +483,7 @@ TSharedPtr<SWidget> SPublisherWindow::ConstructThumbnailWidget()
 				.Period(0.5f)
 				.Visibility_Lambda([this]()
 				{
-					if (ShotTexture)
+					if (ShotTexture->IsValidLowLevel())
 					{
 						return ShotTexture->IsFullyStreamedIn() ? EVisibility::Hidden : EVisibility::SelfHitTestInvisible;
 					}
@@ -491,7 +500,7 @@ FReply SPublisherWindow::OnCaptureImageFromViewport()
 
 	if (ShotTexture)
 	{
-		Brush.SetResourceObject(ShotTexture.Get());
+		Brush.SetResourceObject(ShotTexture);
 		Brush.DrawAs = ESlateBrushDrawType::Image;
 		Brush.SetImageSize(FVector2D(VAULT_PUBLISHER_THUMBNAIL_SIZE, VAULT_PUBLISHER_THUMBNAIL_SIZE));
 	}
@@ -506,7 +515,7 @@ FReply SPublisherWindow::OnCaptureImageFromFile()
 
 	if (ShotTexture)
 	{
-		Brush.SetResourceObject(ShotTexture.Get());
+		Brush.SetResourceObject(ShotTexture);
 		Brush.DrawAs = ESlateBrushDrawType::Image;
 		Brush.SetImageSize(FVector2D(VAULT_PUBLISHER_THUMBNAIL_SIZE, VAULT_PUBLISHER_THUMBNAIL_SIZE));
 	}
@@ -514,7 +523,20 @@ FReply SPublisherWindow::OnCaptureImageFromFile()
 	return FReply::Handled();
 }
 
-TSharedPtr<UTexture2D> SPublisherWindow::CreateThumbnailFromScene()
+void SPublisherWindow::DestroyThumbnail()
+{
+	if (ShotTexture)
+	{
+		if (ShotTexture->Resource)
+		{
+			ShotTexture->ReleaseResource();
+		}
+		//ShotTexture->MarkPendingKill();
+		//ShotTexture.Reset();
+	}
+}
+
+UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
 {
 	FViewport* Viewport = GEditor->GetActiveViewport();
 
@@ -558,12 +580,12 @@ TSharedPtr<UTexture2D> SPublisherWindow::CreateThumbnailFromScene()
 
 	if (ResizedTexture)
 	{
-		return MakeShareable(ResizedTexture);
+		return ResizedTexture;
 	}
 	return nullptr;
 }
 
-TSharedPtr<UTexture2D> SPublisherWindow::CreateThumbnailFromFile()
+UTexture2D* SPublisherWindow::CreateThumbnailFromFile()
 {
 	IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
 	if (DesktopPlatform == nullptr)
@@ -596,8 +618,8 @@ TSharedPtr<UTexture2D> SPublisherWindow::CreateThumbnailFromFile()
 		return nullptr;
 	}
 
-	TSharedPtr<UTexture2D> OriginalTexture = MakeShareable(FImageUtils::ImportFileAsTexture2D(SourceImagePath));
-	if (!OriginalTexture.IsValid())
+	UTexture2D* OriginalTexture = FImageUtils::ImportFileAsTexture2D(SourceImagePath);
+	if (!OriginalTexture)
 	{
 		return nullptr;
 	}
@@ -650,7 +672,7 @@ FReply SPublisherWindow::TryPackage()
 		}
 	}
 
-	UImageWriteBlueprintLibrary::ExportToDisk(ShotTexture.Get(), ScreenshotPath, Params);
+	UImageWriteBlueprintLibrary::ExportToDisk(ShotTexture, ScreenshotPath, Params);
 
 	// Store PackageName
 	const FString AssetPath = CurrentlySelectedAsset.PackageName.ToString();
@@ -906,7 +928,7 @@ FReply SPublisherWindow::GenerateMapFromPreset()
 	*/
 
 	// Bug fix to stop crashes when a image was taken prior to choosing a map change.
-	ShotTexture->ReleaseResource();
+	//ShotTexture->ReleaseResource();
 
 	const FString ContentPath = IPluginManager::Get().FindPlugin(TEXT("Vault"))->GetContentDir();
 	const FString MapPath = ContentPath / "PresetMap.umap";

@@ -21,6 +21,9 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	// Construct Widget
 	void Construct(const FArguments& InArgs);
 
+	~SPublisherWindow();
+
+
 	// On Tick
 	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
 
@@ -32,8 +35,10 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 
 	FReply OnCaptureImageFromFile();
 
+	void DestroyThumbnail();
+
 	// Viewport Shot, whether captured or loaded. Passed into our SlateBrush, this ref is mainly for checking streaming status
-	TSharedPtr<UTexture2D> ShotTexture;
+	UTexture2D* ShotTexture;
 
 	// SImage Widget for our Thumbnail display
 	TSharedPtr<SImage> ThumbnailImage;
@@ -49,13 +54,13 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 
 	TSharedPtr<SImage> ThumbnailPreviewBox;
 
-	FSlateBrush* ImageSlateBrush;
+	//FSlateBrush* ImageSlateBrush;
 
 	// Capture Thumbnail from the Screen
-	TSharedPtr<UTexture2D> CreateThumbnailFromScene();
+	UTexture2D* CreateThumbnailFromScene();
 
 	// Capture Thumbnail from a File
-	TSharedPtr<UTexture2D> CreateThumbnailFromFile();
+	UTexture2D* CreateThumbnailFromFile();
 
 	// All finished, gather everything and package.
 	FReply TryPackage();
