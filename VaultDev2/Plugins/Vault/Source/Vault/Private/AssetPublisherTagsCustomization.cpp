@@ -5,7 +5,7 @@
 #include "DetailWidgetRow.h"
 #include "AssetPublisher.h"
 #include "SPublisherWindow.h"
-
+#include "EditorFontGlyphs.h"
 #include "Slate.h"
 #include "SlateExtras.h"
 #include "VaultSettings.h"
@@ -29,25 +29,49 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 		.AutoHeight()
 		.HAlign(HAlign_Fill)
 		.VAlign(VAlign_Top)
-		.Padding(2.0f)
+		.Padding(0.0f)
+		[
+			SNew(SHorizontalBox)
+			+SHorizontalBox::Slot()
+			.AutoWidth()
+			.Padding(FMargin(0, 0, 3, 0))
+			[
+				SNew(STextBlock)
+				.Font(FEditorStyle::Get().GetFontStyle("FontAwesome.12"))
+				.Text_Lambda([this]
+				{
+					return TagsCustomBox->GetText().IsEmpty() ?
+						FEditorFontGlyphs::Times_Circle : FEditorFontGlyphs::Check_Circle;
+				})
+				.ColorAndOpacity_Lambda([this]
+				{
+					return TagsCustomBox->GetText().IsEmpty() ? FLinearColor::Red : FLinearColor::Green;
+				})
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("TagsHeaderTitleLbl", "Tags"))
+			]
+
+		]
+		
+		
+		+SVerticalBox::Slot()
+		.AutoHeight()
+		.HAlign(HAlign_Fill)
+		.VAlign(VAlign_Top)
+		.Padding(0, 7, 0, 0)
 		[
 			SNew(SBox)
 			.MinDesiredHeight(160.f)
 		    .MaxDesiredHeight(160.f)
 			[
 				SNew(SHorizontalBox)
-				+ SHorizontalBox::Slot() // User Entry Box Left
-				.Padding(2.f, 2.f)
-				.FillWidth(1.0f)
-				.HAlign(HAlign_Fill)
-				[
-					SAssignNew(TagsCustomBox, SMultiLineEditableTextBox)
-					.HintText(LOCTEXT("TagsUserEntry", "Comma Separated Tags"))
-					.AutoWrapText(true)
-					.IsReadOnly(false)
-				]
+
 				+ SHorizontalBox::Slot() // Tags Right - Tag Pool
-				.Padding(2.f, 2.f)
+				.Padding(0.f, 0.f)
 				.FillWidth(1.0f)
 				.HAlign(HAlign_Fill)
 				[
@@ -59,6 +83,7 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 						SAssignNew(TagSearchBox, SSearchBox)
 						.OnTextChanged(this, &SPublisherTagsWidget::OnTagSearchTextChanged)
 						.OnTextCommitted(this, &SPublisherTagsWidget::OnTagSearchTextCommitted)
+						.HintText(LOCTEXT("TagSearchHintTextLbl", "Search Tags"))
 					]
 
 					+ SVerticalBox::Slot()
@@ -79,6 +104,19 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 						)
 					]
 				] // end hbox slot
+
+				+ SHorizontalBox::Slot() // User Entry Box Left
+					.Padding(FMargin(9, 0,0,0))
+					.FillWidth(1.0f)
+					.HAlign(HAlign_Fill)
+					[
+						SAssignNew(TagsCustomBox, SMultiLineEditableTextBox)
+						.HintText(LOCTEXT("TagsUserEntry", "Comma Separated Tags"))
+					.AutoWrapText(true)
+					.IsReadOnly(false)
+					]
+
+
 			] // end sbox
 		] // End tag section
 	];

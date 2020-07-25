@@ -13,29 +13,9 @@ class VAULT_API UAssetPublisher : public UObject
 {
 public:
 
-	UAssetPublisher();
-
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, Category = "Vault")
-	FName Author;
-
-	UPROPERTY(EditAnywhere, Category = "Vault")
-	FName PackName;
-
-	UPROPERTY(EditAnywhere, Category = "Vault")
-	FString Description;
-
-	UPROPERTY(EditAnywhere, Category = "Vault")
-	TSoftObjectPtr<UObject> PrimaryAsset;
-
-	//UPROPERTY(VisibleAnywhere, Category = "Package List")
-	//FString SecondaryAssetsToInclude;
-
-	virtual void PostEditChangeChainProperty(struct FPropertyChangedChainEvent& PropertyChangedEvent) override;
-
 	// Package Step, Called from UI
-
 	static bool PackageSelected(TSet<FString> PackageObjects, FVaultMetadata& Meta);
 
 private:

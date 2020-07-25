@@ -9,24 +9,6 @@
 #include "Vault.h"
 
 
-UAssetPublisher::UAssetPublisher()
-{
-	Author = FPlatformProcess::UserName();
-}
-
-void UAssetPublisher::PostEditChangeChainProperty(struct FPropertyChangedChainEvent& PropertyChangedEvent)
-{
-	Super::PostEditChangeChainProperty(PropertyChangedEvent);
-
-	if (PropertyChangedEvent.Property)
-	{
-		if (PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UAssetPublisher, PrimaryAsset))
-		{
-		
-		}
-	}
-}
-
 bool UAssetPublisher::PackageSelected(TSet<FString> PackageObjects, FVaultMetadata& Meta)
 {
 	UpdateSystemMeta(Meta);

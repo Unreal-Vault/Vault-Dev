@@ -100,6 +100,11 @@ private:
 
 void SPublisherWindow::Construct(const FArguments& InArgs)
 {
+
+	// Store a shared this
+	TWeakPtr<SPublisherWindow> WeakPtr = SharedThis(this);
+
+	VaultOutputLog = MakeShareable(new FVaultOutputLog);
 	
 	// Our Asset Picking Widget
 	TSharedRef<SWidget> AssetPickerWidget = SNew(SObjectPropertyEntryBox)
@@ -250,23 +255,43 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 			[
 				SAssignNew(TagsWidget, SPublisherTagsWidget)
 			]
+
+		+ SVerticalBox::Slot()
+			.AutoHeight()
+			.HAlign(HAlign_Fill)
+			.VAlign(VAlign_Center)
+			.Padding(0.f, 16.f, 0.f, 0.f)
+			[
+				SNew(SButton)
+				.HAlign(HAlign_Center)
+				.OnClicked(this, &SPublisherWindow::TryPackage)
+				.Text(LOCTEXT("SubmitToVaultLabel", "Submit to Vault"))
+				.ButtonStyle(FEditorStyle::Get(), "FlatButton.Success")
+				.TextStyle(FEditorStyle::Get(), "NormalText.Important")
+				.ContentPadding(FMargin(10.0, 10.0))
+				.IsEnabled(this, &SPublisherWindow::CanPackage)
+			]
+
+		+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(0,10,0,0)
+			[
+				ConstructOutputLog()
+			]
+		
 		
 		;
 
-	// Store a shared this
-	TWeakPtr<SPublisherWindow> WeakPtr = SharedThis(this);
 
-
-	VaultOutputLog = MakeShareable(new FVaultOutputLog);
 
 	// Start UI
 	TSharedRef<SVerticalBox> RootWidget = SNew(SVerticalBox);
 
 	RootWidget->AddSlot()
 		.HAlign(HAlign_Fill)
-		.VAlign(VAlign_Center)
-		.AutoHeight()
-		.Padding(5.f, 5.f, 5.f, 5.f)
+		.VAlign(VAlign_Fill)
+		.FillHeight(1)
+		.Padding(60)
 		[
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
@@ -372,60 +397,33 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 						//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
 					]
 				]
+				+ SVerticalBox::Slot()
+				.Padding(0,15,0,3)
+					.AutoHeight()
+					[
+						SNew(STextBlock)
+						.Text(LOCTEXT("seecondaryAssetBoxHeaderLbl", "Additional Referenced Assets to Package"))
+					]
+				+ SVerticalBox::Slot()
+					.AutoHeight()
+					[
+						SNew(SBox)
+							.HeightOverride(160.f)
+						[
+							SAssignNew(SecondaryAssetsBox, SMultiLineEditableTextBox)
+							.IsReadOnly(true)
+							.AllowMultiLine(true)
+							.AlwaysShowScrollbars(false)
+							.Text(this, &SPublisherWindow::GetSecondaryAssetList)
+						]
+					]
 
 
 
 			]
 		]; // Close VBox
 		
-	RootWidget->AddSlot()
-	.AutoHeight()
-	.HAlign(HAlign_Fill)
-	.VAlign(VAlign_Center)
-	.Padding(0.0)
-	[
-		SNew(SBorder)
-		.BorderImage(FEditorStyle::GetBrush("ToolPanel.GroupBorder"))
-		[
-			SNew(SVerticalBox)
-			+ SVerticalBox::Slot()
-			.AutoHeight()
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("seecondaryAssetBoxHeaderLbl", "Additional Referenced Assets to Package"))
-			]
-			+ SVerticalBox::Slot()
-			.AutoHeight()
-			[
-				SAssignNew(SecondaryAssetsBox, SMultiLineEditableTextBox)
-				.IsReadOnly(true)
-				.AllowMultiLine(true)
-				.AlwaysShowScrollbars(false)
-				.Text(this, &SPublisherWindow::GetSecondaryAssetList)
-			]
-		] // close border
-	]; //close slot
 
-	RootWidget->AddSlot()
-	.AutoHeight()
-	.HAlign(HAlign_Fill)
-	.VAlign(VAlign_Center)
-	.Padding(5.f, 5.f, 5.f, 5.f)
-	[
-		SNew(SButton)
-		.HAlign(HAlign_Center)
-		.OnClicked(this, &SPublisherWindow::TryPackage)
-		.Text(LOCTEXT("SubmitToVaultLabel", "Submit to Vault"))
-		.ButtonStyle(FEditorStyle::Get(), "FlatButton.Success")
-		.TextStyle(FEditorStyle::Get(), "NormalText.Important")
-		.ContentPadding(FMargin(10.0,10.0))
-		.IsEnabled(this, &SPublisherWindow::CanPackage)
-	];
-
-	RootWidget->AddSlot()
-	[
-		ConstructOutputLog()
-	];
 		
 	ChildSlot
 	[
@@ -754,16 +752,16 @@ TArray<FString> SPublisherWindow::GetAssetDependancies(const FName AssetPath) co
 
 FText SPublisherWindow::GetSecondaryAssetList() const
 {
-	TSoftObjectPtr<UObject> Asset = GetMutableDefault<UAssetPublisher>()->PrimaryAsset;
+	//TSoftObjectPtr<UObject> Asset = GetMutableDefault<UAssetPublisher>()->PrimaryAsset;
 
-	if (Asset)
+	if (CurrentlySelectedAsset.IsValid())
 	{
 		FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>("AssetRegistry");
-		FAssetData AssetPublisherData;
-		UAssetManager::GetIfValid()->GetAssetDataForPath(Asset.ToSoftObjectPath(), AssetPublisherData);
+		//FAssetData AssetPublisherData;
+		//UAssetManager::GetIfValid()->GetAssetDataForPath(Asset.ToSoftObjectPath(), AssetPublisherData);
 
-		TArray<FString> Dependancies = GetAssetDependancies(AssetPublisherData.PackageName);
-		Dependancies.Remove(AssetPublisherData.PackageName.ToString());
+		TArray<FString> Dependancies = GetAssetDependancies(CurrentlySelectedAsset.PackageName);
+		Dependancies.Remove(CurrentlySelectedAsset.PackageName.ToString());
 
 		FString FormattedList;
 		for (FString Dependant : Dependancies)
