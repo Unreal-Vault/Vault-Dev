@@ -221,7 +221,7 @@ void FVaultSettings::UpdateVaultFiles()
 
 bool FVaultSettings::SaveVaultTags(TSet<FString> NewTags)
 {
-	// A set of tags to save, pulls previous tags into it so the new ones can amend in.
+	// A set of new tags to save, pulls previous tags into it so the new ones can amend in.
 	TSet<FString> TagsToSave;
 
 	ReadVaultTags(TagsToSave);
@@ -229,18 +229,14 @@ bool FVaultSettings::SaveVaultTags(TSet<FString> NewTags)
 	// Json Object to be written
 	TSharedPtr<FJsonObject> JsonTags = MakeShareable(new FJsonObject());
 
-	// As theres no append unique, loop through to add
-	for (FString Tag : NewTags)
-	{
-		TagsToSave.Add(Tag);
-	}
+	// Append our new tags to old. Since they are Sets, there wont be any duplicates
+	TagsToSave.Append(NewTags);
 
 	// Sort Alphabetically Lambda.
 	TagsToSave.Sort([](const FString& A, const FString& B)
 	{
 		return A > B;
 	});
-
 
 	// Convert FString into JsonValues
 	TArray<TSharedPtr<FJsonValue>> TagElements;
@@ -251,11 +247,6 @@ bool FVaultSettings::SaveVaultTags(TSet<FString> NewTags)
 
 	// Store tags into an array
 	JsonTags->SetArrayField(TagArrayKey, TagElements);
-
-	// Create the Object to hold all the tag data
-	//TSharedPtr<FJsonObject> JsonNewTags = MakeShareable(new FJsonObject());
-
-	//JsonNewTags->SetObjectField(TagsKey, JsonTags);
 
 	return WriteJsonObjectToFile(JsonTags, GetGlobalTagsPoolFilePathFull());
 

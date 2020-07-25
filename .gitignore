@@ -28,6 +28,8 @@ Binaries/
 Intermediate/
 .vs/
 Saved/
+*Content/
+
 
 # Logs and databases #
 ######################
@@ -71,3 +73,7 @@ VaultDev/VaultDev.sln
 *.bin
 *.ipch
 *.sln
+
+
+
+Content

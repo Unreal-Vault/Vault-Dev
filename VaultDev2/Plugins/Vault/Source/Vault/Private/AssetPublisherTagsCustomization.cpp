@@ -54,9 +54,7 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 				SNew(STextBlock)
 				.Text(LOCTEXT("TagsHeaderTitleLbl", "Tags"))
 			]
-
 		]
-		
 		
 		+SVerticalBox::Slot()
 		.AutoHeight()
@@ -69,7 +67,6 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 		    .MaxDesiredHeight(160.f)
 			[
 				SNew(SHorizontalBox)
-
 				+ SHorizontalBox::Slot() // Tags Right - Tag Pool
 				.Padding(0.f, 0.f)
 				.FillWidth(1.0f)
@@ -103,20 +100,43 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 							.DefaultLabel(LOCTEXT("headerLabel", "Tag List"))
 						)
 					]
-				] // end hbox slot
+				] // End H-Box slot
 
 				+ SHorizontalBox::Slot() // User Entry Box Left
 					.Padding(FMargin(9, 0,0,0))
 					.FillWidth(1.0f)
 					.HAlign(HAlign_Fill)
 					[
-						SAssignNew(TagsCustomBox, SMultiLineEditableTextBox)
-						.HintText(LOCTEXT("TagsUserEntry", "Comma Separated Tags"))
-					.AutoWrapText(true)
-					.IsReadOnly(false)
+						SNew(SVerticalBox)
+						+SVerticalBox::Slot()
+						.AutoHeight()
+						[
+							SNew(SBox)
+							.HeightOverride(140.0)
+							[
+								SAssignNew(TagsCustomBox, SMultiLineEditableTextBox)
+								.HintText(LOCTEXT("TagsUserEntry", "Comma Separated Tags"))
+								.AutoWrapText(true)
+								.IsReadOnly(false)
+							]
+						]
+						+ SVerticalBox::Slot()
+						.AutoHeight()
+						.Padding(0,5,0,0)
+						[
+							SNew(SHorizontalBox)
+							+SHorizontalBox::Slot()
+							.AutoWidth()
+							[
+								SAssignNew(ShouldAddNewTagsToGlobalTagsCheckBox, SCheckBox)
+							]
+							+SHorizontalBox::Slot()
+							[
+								SNew(STextBlock)
+								.Text(LOCTEXT("AddTagsToPoolLbl", "Add new tags to Global Tags List?"))
+							]
+						]
 					]
-
-
 			] // end sbox
 		] // End tag section
 	];
@@ -128,7 +148,6 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 }
 
 
-
 TSet<FString> SPublisherTagsWidget::GetUserSelectedTags()
 {
 	const FString TagString = TagsCustomBox->GetText().ToString();
@@ -138,11 +157,15 @@ TSet<FString> SPublisherTagsWidget::GetUserSelectedTags()
 	return TagSet;
 }
 
+bool SPublisherTagsWidget::GetShouldAddNewTagsToLibrary()
+{
+	return ShouldAddNewTagsToGlobalTagsCheckBox->IsChecked();
+}
+
 void SPublisherTagsWidget::OnTagSearchTextChanged(const FText& InFilterText)
 {
 	TagTextFilterPtr->SetFilterText(InFilterText);
 	TagSearchBox->SetError(TagTextFilterPtr->GetFilterErrorText());
-
 	RefreshTagPool();
 }
 
@@ -162,7 +185,6 @@ void SPublisherTagsWidget::CacheBaseTagsPool()
 	{
 		TagsListItems.Add(MakeShareable(new FString(CacheTag)));
 	}
-
 }
 
 void SPublisherTagsWidget::AddTagFromPool(TSharedPtr<FString> InTag)
@@ -234,7 +256,6 @@ TSharedRef<ITableRow> SPublisherTagsWidget::MakeTagRow(TSharedPtr<FString> Item,
 		];
 }
 
-
 void SPublisherTagsWidget::RefreshTagPool()
 {
 	// Clear Existing List of Live Tags.
@@ -254,13 +275,7 @@ void SPublisherTagsWidget::RefreshTagPool()
 			}
 		}
 	}
-
 	KeysList->RebuildList();
 }
-
-
-
-
-
 
 #undef LOCTEXT_NAMESPACE

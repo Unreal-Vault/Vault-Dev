@@ -33,7 +33,7 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	FReply OnCaptureImageFromFile();
 
 	// Viewport Shot, whether captured or loaded. Passed into our SlateBrush, this ref is mainly for checking streaming status
-	UTexture2D* ShotTexture;
+	TSharedPtr<UTexture2D> ShotTexture;
 
 	// SImage Widget for our Thumbnail display
 	TSharedPtr<SImage> ThumbnailImage;
@@ -52,10 +52,10 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	FSlateBrush* ImageSlateBrush;
 
 	// Capture Thumbnail from the Screen
-	UTexture2D* CreateThumbnailFromScene();
+	TSharedPtr<UTexture2D> CreateThumbnailFromScene();
 
 	// Capture Thumbnail from a File
-	UTexture2D* CreateThumbnailFromFile();
+	TSharedPtr<UTexture2D> CreateThumbnailFromFile();
 
 	// All finished, gather everything and package.
 	FReply TryPackage();
@@ -106,7 +106,11 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	FString GetCurrentAssetPath() const;
 	void OnAssetSelected(const FAssetData& InAssetData);
 
+	bool IsPythonMapGenAvailable() const;
 
+	FReply GenerateMapFromPython();
+
+	FReply GenerateMapFromPreset();
 
 	// New user entry stuff
 	TSharedPtr<SEditableTextBox> PackageNameInput;

@@ -43,6 +43,8 @@
 
 #include "EditorFontGlyphs.h"
 #include "ImageWriteBlueprintLibrary.h"
+#include <Interfaces/IPluginManager.h>
+#include <FileHelpers.h>
 
 
 #define LOCTEXT_NAMESPACE "FVaultPublisher"
@@ -269,7 +271,7 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 				.ButtonStyle(FEditorStyle::Get(), "FlatButton.Success")
 				.TextStyle(FEditorStyle::Get(), "NormalText.Important")
 				.ContentPadding(FMargin(10.0, 10.0))
-				.IsEnabled(this, &SPublisherWindow::CanPackage)
+				//.IsEnabled(this, &SPublisherWindow::CanPackage) // dont handle it like this until we sort the disabled style
 			]
 
 		+ SVerticalBox::Slot()
@@ -387,15 +389,19 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 						SNew(SButton)
 						.Text(LOCTEXT("GeneratePythonMapLabel", "Generate Map from Python"))
 						.ButtonStyle(FEditorStyle::Get(), "FlatButton.Info")
-						//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
+						.IsEnabled(this, &SPublisherWindow::IsPythonMapGenAvailable)
+						.ToolTipText(LOCTEXT("LoadMapFromPythonTooltip", "Not available in this release"))
+						.OnClicked(this, &SPublisherWindow::GenerateMapFromPython)
 					]
 					+ SHorizontalBox::Slot()
 					.Padding(FMargin(1.f, 0.f, 0.f, 0.f))
 					[
 						SNew(SButton)
-						.Text(LOCTEXT("LoadPresetMapLabel", "Load Map from Preset Map"))
+						.Text(LOCTEXT("LoadPresetMapLabel", "Load Preset Map"))
 						.ButtonStyle(FEditorStyle::Get(), "FlatButton.Info")
-						//.OnClicked(this, &SPublisherWindow::StartScreenshotCapture)
+						.IsEnabled(true)
+						.ToolTipText(LOCTEXT("LoadMapFromPresetTooltip", "Load Map from Preset. \n This will load either the Preset map, or if you have a map file to publish, will load this map. \nThis is hard-coded in this release, but future releases will support multiple choices"))
+						.OnClicked(this, &SPublisherWindow::GenerateMapFromPreset)
 					]
 				]
 				+ SVerticalBox::Slot()
@@ -485,7 +491,7 @@ FReply SPublisherWindow::OnCaptureImageFromViewport()
 
 	if (ShotTexture)
 	{
-		Brush.SetResourceObject(ShotTexture);
+		Brush.SetResourceObject(ShotTexture.Get());
 		Brush.DrawAs = ESlateBrushDrawType::Image;
 		Brush.SetImageSize(FVector2D(VAULT_PUBLISHER_THUMBNAIL_SIZE, VAULT_PUBLISHER_THUMBNAIL_SIZE));
 	}
@@ -500,7 +506,7 @@ FReply SPublisherWindow::OnCaptureImageFromFile()
 
 	if (ShotTexture)
 	{
-		Brush.SetResourceObject(ShotTexture);
+		Brush.SetResourceObject(ShotTexture.Get());
 		Brush.DrawAs = ESlateBrushDrawType::Image;
 		Brush.SetImageSize(FVector2D(VAULT_PUBLISHER_THUMBNAIL_SIZE, VAULT_PUBLISHER_THUMBNAIL_SIZE));
 	}
@@ -508,7 +514,7 @@ FReply SPublisherWindow::OnCaptureImageFromFile()
 	return FReply::Handled();
 }
 
-UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
+TSharedPtr<UTexture2D> SPublisherWindow::CreateThumbnailFromScene()
 {
 	FViewport* Viewport = GEditor->GetActiveViewport();
 
@@ -548,14 +554,16 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
 	Params.bDeferCompression = true;
 
 	UTexture2D* ResizedTexture = FImageUtils::CreateTexture2D(VAULT_PUBLISHER_CAPTURE_SIZE, VAULT_PUBLISHER_CAPTURE_SIZE, ScaledBitmap, GetTransientPackage(), FString(), RF_NoFlags, Params);
+	
+
 	if (ResizedTexture)
 	{
-		return ResizedTexture;
+		return MakeShareable(ResizedTexture);
 	}
 	return nullptr;
 }
 
-UTexture2D* SPublisherWindow::CreateThumbnailFromFile()
+TSharedPtr<UTexture2D> SPublisherWindow::CreateThumbnailFromFile()
 {
 	IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
 	if (DesktopPlatform == nullptr)
@@ -588,8 +596,8 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromFile()
 		return nullptr;
 	}
 
-	UTexture2D* OriginalTexture = FImageUtils::ImportFileAsTexture2D(SourceImagePath);
-	if (!OriginalTexture)
+	TSharedPtr<UTexture2D> OriginalTexture = MakeShareable(FImageUtils::ImportFileAsTexture2D(SourceImagePath));
+	if (!OriginalTexture.IsValid())
 	{
 		return nullptr;
 	}
@@ -601,6 +609,14 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromFile()
 
 FReply SPublisherWindow::TryPackage()
 {
+	OutputLogExpandableBox->SetExpanded(true);
+	
+	if (!CanPackage())
+	{
+		UE_LOG(LogVault, Error, TEXT("One or more required fields are empty"));
+		return FReply::Handled();
+	}
+	
 
 	// #todo to abstract UI from functionality, much of this code should be reviewed for splitting
 	// this will be important when it comes to python hooks
@@ -608,19 +624,12 @@ FReply SPublisherWindow::TryPackage()
 
 	UE_LOG(LogVault, Display, TEXT("Starting Packaging Operation"));
 
-	OutputLogExpandableBox->SetExpanded(true);
-
-	// Get Default Asset - May be expanded to array
-	//TSoftObjectPtr<UObject> Asset = GetMutableDefault<UAssetPublisher>()->PrimaryAsset;
-
-	if (!CurrentlySelectedAsset.IsValid())
-	{
-		UE_LOG(LogVault, Error, TEXT("No Asset Selected"));
-		return FReply::Handled();
-	}
 
 	const FString OutputDirectory = FVaultSettings::Get().GetAssetLibraryRoot();
 	const FString ScreenshotPath = OutputDirectory / PackageNameInput->GetText().ToString() + TEXT(".png");
+	
+	// Pack file path, only used here for duplicate detection
+	const FString PackageFileOutput = OutputDirectory / PackageNameInput->GetText().ToString() + TEXT(".upack");
 
 	FImageWriteOptions Params;
 	Params.bAsync = true;
@@ -628,17 +637,27 @@ FReply SPublisherWindow::TryPackage()
 	Params.CompressionQuality = 90;
 	Params.Format = EDesiredImageFormat::PNG;
 
-	UImageWriteBlueprintLibrary::ExportToDisk(ShotTexture, ScreenshotPath, Params);
+	if (FPaths::FileExists(PackageFileOutput))
+	{
+		const EAppReturnType::Type Confirmation = FMessageDialog::Open(
+			EAppMsgType::OkCancel,
+			LOCTEXT("TryPackageOverwriteMsg", "A Vault item already exists with this pack name, are you sure you want to overwrite it?\nThis action cannot be undone."));
 
-	
-	// Find AssetData
-	//FAssetData AssetPublisherData;
-	//UAssetManager::GetIfValid()->GetAssetDataForPath(Asset.ToSoftObjectPath(), AssetPublisherData);
+		if (Confirmation == EAppReturnType::Cancel)
+		{
+			UE_LOG(LogVault, Error, TEXT("User cancelled packaging operation due to duplicate pack found"));
+			return FReply::Handled();;
+		}
+	}
+
+	UImageWriteBlueprintLibrary::ExportToDisk(ShotTexture.Get(), ScreenshotPath, Params);
 
 	// Store PackageName
 	const FString AssetPath = CurrentlySelectedAsset.PackageName.ToString();
 
+	// Our core publish list, which gets written as a text file to be passed to the Pak Tool.
 	TSet<FString> PublishList;
+	TSet<FString> ObjectsInPackage;
 
 	TSet<FString> AssetsToProcess = { AssetPath };
 	AssetsToProcess.Append(GetAssetDependancies(CurrentlySelectedAsset.PackageName));
@@ -651,18 +670,24 @@ FReply SPublisherWindow::TryPackage()
 
 		FString Filename;
 		bool bGotFilename = FPackageName::TryConvertLongPackageNameToFilename(Path, Filename);
-		//FString SuperAbs = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*Filename);
+
+		
 
 		// Find the UPackage to determine the asset type
-		UPackage* Package = FindPackage(nullptr, *CurrentlySelectedAsset.PackageName.ToString());
+		UPackage* PrimaryAssetPackage = CurrentlySelectedAsset.GetPackage();
+		//UPackage* Package = FindPackage(nullptr, *CurrentlySelectedAsset.PackageName.ToString());
+		UPackage* ItemPackage = FindPackage(nullptr, *Path);
 
-		if (!Package)
+		if (!PrimaryAssetPackage || !ItemPackage)
 		{
 			UE_LOG(LogVault, Error, TEXT("Unable to find UPackage for %s"), *CurrentlySelectedAsset.PackageName.ToString());
+			continue;
 		}
 
+		ObjectsInPackage.Add(ItemPackage->FileName.ToString());
+
 		// Get and append the asset extension
-		const FString ExtensionName = Package->ContainsMap() ? FPackageName::GetMapPackageExtension() : FPackageName::GetAssetPackageExtension();
+		const FString ExtensionName = ItemPackage->ContainsMap() ? FPackageName::GetMapPackageExtension() : FPackageName::GetAssetPackageExtension();
 
 		// Append extension into filename
 		Filename += ExtensionName;
@@ -679,8 +704,15 @@ FReply SPublisherWindow::TryPackage()
 	AssetPublishMetadata.Description = DescriptionInput->GetText().ToString();
 	AssetPublishMetadata.CreationDate = FDateTime::UtcNow();
 	AssetPublishMetadata.LastModified = FDateTime::UtcNow();
-
 	AssetPublishMetadata.Tags = TagsWidget->GetUserSelectedTags();
+	AssetPublishMetadata.ObjectsInPack = ObjectsInPackage;
+
+
+	// Lets see if we want to append any new tags to our global tags library
+	if (TagsWidget->GetShouldAddNewTagsToLibrary())
+	{
+		FVaultSettings::Get().SaveVaultTags(TagsWidget->GetUserSelectedTags());
+	}
 
 
 	UAssetPublisher::PackageSelected(PublishList, AssetPublishMetadata);
@@ -775,6 +807,16 @@ FText SPublisherWindow::GetSecondaryAssetList() const
 bool SPublisherWindow::CanPackage() const
 {
 	// #todo Currently only check pack name, should check more like screenshot and other details. Enforce some rules!
+	
+	if (PackageNameInput->GetText().IsEmpty() ||
+		AuthorInput->GetText().IsEmpty() ||
+		DescriptionInput->GetText().IsEmpty() ||
+		TagsWidget->GetUserSelectedTags().Num() == 0 ||
+		CurrentlySelectedAsset.IsValid() == false
+		)
+	{
+		return false;
+	}
 	return true;
 }
 
@@ -844,17 +886,51 @@ void SPublisherWindow::OnAssetSelected(const FAssetData& InAssetData)
 	CurrentlySelectedAsset = InAssetData;
 }
 
+bool SPublisherWindow::IsPythonMapGenAvailable() const
+{
+	return false;
+}
 
-//FText SPublisherWindow::GetPrimaryAssetList() const
-//{
-//	TSoftObjectPtr<UObject> Asset = GetMutableDefault<UAssetPublisher>()->PrimaryAsset;
-//
-//	if (Asset)
-//	{
-//		return FText::FromString(Asset->GetName());
-//	}
-//	return FText::GetEmpty();
-//}
+FReply SPublisherWindow::GenerateMapFromPython()
+{
+	return FReply::Handled();
+}
+
+FReply SPublisherWindow::GenerateMapFromPreset()
+{
+	/* 
+		#todo. Hard coded Path to content, In future want to make this flexible, copying the map from a central location.
+		We also want to unify the python and pre-made maps options, 
+		as the end user doesnt really need to care the source, just the result
+
+	*/
+
+	// Bug fix to stop crashes when a image was taken prior to choosing a map change.
+	ShotTexture->ReleaseResource();
+
+	const FString ContentPath = IPluginManager::Get().FindPlugin(TEXT("Vault"))->GetContentDir();
+	const FString MapPath = ContentPath / "PresetMap.umap";
+
+	if (CurrentlySelectedAsset.IsValid())
+	{
+		if (CurrentlySelectedAsset.GetPackage()->ContainsMap())
+		{
+			FEditorFileUtils::LoadMap(CurrentlySelectedAsset.GetPackage()->FileName.ToString(), true, true);
+			return FReply::Handled();
+			
+		}
+
+		FEditorFileUtils::LoadMap(MapPath, true, true);
+		// #future We could spawn the selected asset if possible. 
+		// but its too early in the LoadMap to do it here, we need to do some bindings for level loads
+		// and handle that when appropiate.
+		return FReply::Handled();
+
+	}
+
+	FEditorFileUtils::LoadMap(MapPath, true, true);
+	return FReply::Handled();
+}
 
 
 #undef LOCTEXT_NAMESPACE

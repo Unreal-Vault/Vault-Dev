@@ -23,6 +23,8 @@ public:
 
 	// Our final getter, passing the data into the publishing script.
 	TSet<FString> GetUserSelectedTags();
+
+	bool GetShouldAddNewTagsToLibrary();
 	
 	// Our Entry box that acts as the final list of tags, either from user entry or list selection
 	TSharedPtr<SMultiLineEditableTextBox> TagsCustomBox;
@@ -61,8 +63,6 @@ private:
 	// tag list view - on row
 	TSharedRef<ITableRow> MakeTagRow(TSharedPtr<FString> Item, const TSharedRef<STableViewBase>& OwnerTable);
 
-
-
-	TSharedPtr<IPropertyHandle> TagClassVar;
+	TSharedPtr<SCheckBox> ShouldAddNewTagsToGlobalTagsCheckBox;
 
 };

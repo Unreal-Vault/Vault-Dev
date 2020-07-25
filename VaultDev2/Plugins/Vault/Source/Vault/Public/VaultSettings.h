@@ -21,10 +21,13 @@ public:
 	// Read Global Settings file using the local to find it, and return the json object
 	TSharedPtr<FJsonObject> GetVaultGlobalSettings();
 
+	// Add new Vault Tags. User choice to opt their new tags into the global library
 	bool SaveVaultTags(TSet<FString> NewTags);
 
+	// Read Existing Tags from the JSON Tag file
 	bool ReadVaultTags(TSet<FString>& OutTags);
 
+	// Get our Asset Library root path, defined in the global settings. 
 	FString GetAssetLibraryRoot();
 
 private:
