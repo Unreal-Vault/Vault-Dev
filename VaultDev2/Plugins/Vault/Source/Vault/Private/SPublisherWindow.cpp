@@ -274,7 +274,7 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 
 		+ SVerticalBox::Slot()
 			.AutoHeight()
-			.Padding(0,10,0,0)
+			.Padding(0,20,0,0)
 			[
 				ConstructOutputLog()
 			]
@@ -291,24 +291,25 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 		.HAlign(HAlign_Fill)
 		.VAlign(VAlign_Fill)
 		.FillHeight(1)
-		.Padding(60)
+		.Padding(2)
 		[
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
 			.FillWidth(1)
-			.Padding(FMargin(5.0, 5.0, 20.0, 5.f))
+			.Padding(FMargin(5.0, 5.0, 10.0, 5.f))
 			[
 				// Left Side Slot
 				LeftPanel
 			]
 			+SHorizontalBox::Slot()
+			.Padding(FMargin(10.0, 5.0, 5.0, 5.f))
 			.HAlign(HAlign_Right)
 			.AutoWidth()
 			[
 				// Left Panel
 				SNew(SVerticalBox)
 				+SVerticalBox::Slot()
-				.FillHeight(1)
+				.AutoHeight()
 				[
 					ConstructThumbnailWidget().ToSharedRef()
 				]
@@ -408,18 +409,18 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 					.AutoHeight()
 					[
 						SNew(SBox)
-							.HeightOverride(160.f)
+							.MinDesiredHeight(30.f)
+							.MaxDesiredHeight(180.f)
 						[
 							SAssignNew(SecondaryAssetsBox, SMultiLineEditableTextBox)
 							.IsReadOnly(true)
 							.AllowMultiLine(true)
 							.AlwaysShowScrollbars(false)
+							//.BackgroundColor(FLinearColor::Black)
+							.Style(FEditorStyle::Get(), "Log.TextBox")
 							.Text(this, &SPublisherWindow::GetSecondaryAssetList)
 						]
 					]
-
-
-
 			]
 		]; // Close VBox
 		
@@ -427,12 +428,8 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 		
 	ChildSlot
 	[
-		SNew(SScrollBox)
-		.Orientation(Orient_Vertical)
-		+SScrollBox::Slot()
-		[
-			RootWidget
-		]
+
+		RootWidget
 	];
 
 }
@@ -454,8 +451,8 @@ TSharedPtr<SWidget> SPublisherWindow::ConstructThumbnailWidget()
 			// Thumbnail Area
 			SNew(SOverlay)
 			+ SOverlay::Slot()
-			.HAlign(HAlign_Fill)
-			.VAlign(VAlign_Fill)
+			.HAlign(HAlign_Center)
+			.VAlign(VAlign_Center)
 			[
 				SAssignNew(ThumbnailImage, SImage)
 				.Image(&ThumbBrush)
