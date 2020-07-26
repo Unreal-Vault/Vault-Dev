@@ -440,39 +440,23 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 
 }
 
-SPublisherWindow::~SPublisherWindow()
-{
-	if (ShotTexture)
-	{
-		DestroyThumbnail();
-		//FlushRenderingCommands();
-	}
-}
-
-void SPublisherWindow::Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime)
-{
-
-}
-
 TSharedPtr<SWidget> SPublisherWindow::ConstructThumbnailWidget()
 {
 	// Init the thumb brush. these settings are only for pre-image choice
+	ThumbBrush = FSlateBrush();
 	ThumbBrush.SetImageSize(FVector2D(256.0));
 
 	return ThumbnailWidget = 
 		SNew(SBox)
-		//.HAlign(HAlign_Center)
 		[
-			// Thumbnail Area
 			SNew(SOverlay)
 			+ SOverlay::Slot()
 			.HAlign(HAlign_Center)
 			.VAlign(VAlign_Center)
 			[
 				SAssignNew(ThumbnailImage, SImage)
-				.Image(&ThumbBrush)
+				.Image(this, &SPublisherWindow::GetThumbnailImage) // Annoying fix to stop crashes on map change
 			]
-
 			+ SOverlay::Slot()
 			.HAlign(HAlign_Center)
 			.VAlign(VAlign_Center)
@@ -523,17 +507,17 @@ FReply SPublisherWindow::OnCaptureImageFromFile()
 	return FReply::Handled();
 }
 
-void SPublisherWindow::DestroyThumbnail()
+const FSlateBrush* SPublisherWindow::GetThumbnailImage() const
 {
-	if (ShotTexture)
+	if (ShotTexture && ShotTexture->IsValidLowLevel())
 	{
-		if (ShotTexture->Resource)
-		{
-			ShotTexture->ReleaseResource();
-		}
-		//ShotTexture->MarkPendingKill();
-		//ShotTexture.Reset();
+		return &ThumbBrush;
 	}
+
+	// #todo. Since slate redraws on tick, this is creating a new brush every run, its also flooding the log.
+	FSlateBrush* NullBrush = new FSlateBrush();
+	NullBrush->SetImageSize(FVector2D(256.0));
+	return NullBrush;
 }
 
 UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
@@ -661,9 +645,12 @@ FReply SPublisherWindow::TryPackage()
 
 	if (FPaths::FileExists(PackageFileOutput))
 	{
+
+		const FText ErrorMsg = LOCTEXT("TryPackageOverwriteMsg", "A Vault item already exists with this pack name, are you sure you want to overwrite it?\nThis action cannot be undone.");
+		const FText ErrorTitle = LOCTEXT("TryPackageOverwriteTitle", "Existing Pack Detected");
+
 		const EAppReturnType::Type Confirmation = FMessageDialog::Open(
-			EAppMsgType::OkCancel,
-			LOCTEXT("TryPackageOverwriteMsg", "A Vault item already exists with this pack name, are you sure you want to overwrite it?\nThis action cannot be undone."));
+			EAppMsgType::OkCancel, ErrorMsg, &ErrorTitle);
 
 		if (Confirmation == EAppReturnType::Cancel)
 		{
@@ -737,53 +724,17 @@ FReply SPublisherWindow::TryPackage()
 	}
 
 
-	UAssetPublisher::PackageSelected(PublishList, AssetPublishMetadata);
+	if (UAssetPublisher::PackageSelected(PublishList, AssetPublishMetadata))
+	{
+		FNotificationInfo PackageResultMessage(LOCTEXT("PackageResultToast", "Packaging Successful"));
+		PackageResultMessage.ExpireDuration = 5.0f;
+		PackageResultMessage.bFireAndForget = true;
+		PackageResultMessage.bUseLargeFont = true;
+		PackageResultMessage.Image = FCoreStyle::Get().GetBrush(TEXT("NotificationList.SuccessImage"));
+		FSlateNotificationManager::Get().AddNotification(PackageResultMessage);
+	}
 	return FReply::Handled();
 }
-
-//void SPublisherWindow::OnPrimaryAssetListChanged()
-//{
-//	AddSelectedToList();
-//}
-//
-//FReply SPublisherWindow::AddSelectedToList()
-//{
-//	// Check if we have something selected:
-//	if (!GetDefault<UAssetPublisher>()->PrimaryAsset->IsValidLowLevel())
-//	{
-//		return FReply::Handled();
-//	}
-//
-//	FText PriorText = PrimaryAssetsBox->GetText();
-//	FString NewText = PriorText.ToString();
-//
-//	FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
-//	TArray<FAssetData> SelectedAssets;
-//	ContentBrowserModule.Get().GetSelectedAssets(SelectedAssets);
-//	TArray<FString> Result;
-//	TArray<FString> SecondaryResult;
-//	for (FAssetData& AssetData : SelectedAssets) {
-//		Result.Add(AssetData.PackageName.ToString());
-//
-//		NewText += "," + AssetData.PackageName.ToString();
-//
-//		SecondaryResult.Append(GetAssetDependancies((AssetData.PackageName)));
-//	}
-//	
-//	PrimaryAssetsBox->SetText(FText::FromName(GetDefault<UAssetPublisher>()->PrimaryAsset->GetFName()));
-//	
-//	PrimaryAssetsBox->Refresh();
-//
-//	FString SecondaryAssetsBoxText;
-//	
-//	for (FString Secondary: SecondaryResult)
-//	{
-//		SecondaryAssetsBoxText += Secondary;
-//	}
-//
-//	SecondaryAssetsBox->SetText(FText::FromString(SecondaryAssetsBoxText));
-//	return FReply::Handled();
-//}
 
 TArray<FString> SPublisherWindow::GetAssetDependancies(const FName AssetPath) const
 {
@@ -924,11 +875,7 @@ FReply SPublisherWindow::GenerateMapFromPreset()
 		#todo. Hard coded Path to content, In future want to make this flexible, copying the map from a central location.
 		We also want to unify the python and pre-made maps options, 
 		as the end user doesnt really need to care the source, just the result
-
 	*/
-
-	// Bug fix to stop crashes when a image was taken prior to choosing a map change.
-	//ShotTexture->ReleaseResource();
 
 	const FString ContentPath = IPluginManager::Get().FindPlugin(TEXT("Vault"))->GetContentDir();
 	const FString MapPath = ContentPath / "PresetMap.umap";
@@ -941,17 +888,11 @@ FReply SPublisherWindow::GenerateMapFromPreset()
 			return FReply::Handled();
 			
 		}
-
-		FEditorFileUtils::LoadMap(MapPath, true, true);
-		// #future We could spawn the selected asset if possible. 
-		// but its too early in the LoadMap to do it here, we need to do some bindings for level loads
-		// and handle that when appropiate.
-		return FReply::Handled();
-
 	}
 
 	FEditorFileUtils::LoadMap(MapPath, true, true);
 	return FReply::Handled();
+
 }
 
 

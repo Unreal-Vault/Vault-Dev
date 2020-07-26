@@ -18,7 +18,6 @@ public:
 
 	SLATE_END_ARGS()
 
-
 	SAssetTileItem();
 
 	~SAssetTileItem();

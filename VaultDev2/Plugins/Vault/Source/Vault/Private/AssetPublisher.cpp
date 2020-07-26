@@ -37,10 +37,15 @@ bool UAssetPublisher::PackageSelected(TSet<FString> PackageObjects, FVaultMetada
 	FFileHelper::SaveStringArrayToFile(PackageObjects.Array(), *TextDocFull);
 	
 	const FString Root = FVaultSettings::Get().GetAssetLibraryRoot();
+	
 	const FString Filename = Meta.PackName.ToString() + TEXT(".upack");
 
-	// Convert String to parsable command
-	const FString Command = FString::Printf(TEXT("%s -create=%s"), *(Root / Filename), *TextDocFull);
+	// Wrap Our Path in Quotes for use in Command-Line
+	const FString Quote(TEXT("\""));
+	const FString PackFilePath = Quote + (Root / Filename) + Quote;
+	
+	// Convert String to parsable command. Ensures path is wrapped in quotes in case of spaces in name
+	const FString Command = FString::Printf(TEXT("%s -create=%s"), *PackFilePath, *TextDocFull);
 
 	UE_LOG(LogVault, Display, TEXT("Running Pack Command: %s"), *Command);
 	bool bRanPak = ExecuteUnrealPak(*Command);

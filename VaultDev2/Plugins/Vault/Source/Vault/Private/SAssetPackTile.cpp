@@ -24,7 +24,7 @@ SAssetTileItem::SAssetTileItem() {}
 
 SAssetTileItem::~SAssetTileItem()
 {
-	if (TextureResource && TextureResource->IsValidLowLevel())
+	if (TextureResource)
 	{
 		TextureResource->ClearFlags(RF_Standalone);
 	}

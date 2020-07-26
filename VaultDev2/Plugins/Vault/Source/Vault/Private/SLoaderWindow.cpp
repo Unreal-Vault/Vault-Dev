@@ -797,7 +797,9 @@ void SLoaderWindow::DeleteAssetPack(TSharedPtr<FVaultMetadata> InPack)
 	IFileManager::Get().Delete(*AbsMetaPath, true);
 	IFileManager::Get().Delete(*AbsPackPath, true);
 
+
 	MetaFilesCache.Remove(*InPack);
+	UpdateFilteredAssets();
 	TileView->RebuildList();
 
 }
