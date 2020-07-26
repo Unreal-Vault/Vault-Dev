@@ -153,7 +153,16 @@ TSet<FString> SPublisherTagsWidget::GetUserSelectedTags()
 	const FString TagString = TagsCustomBox->GetText().ToString();
 	TArray<FString> TagArrayParsed;
 	TagString.ParseIntoArray(TagArrayParsed, TEXT(","));
+
+	// Since its common the user might put a space after the comma on user entered tags, lets clean that up
+	for (FString& MyTag : TagArrayParsed)
+	{
+		MyTag.TrimStartAndEndInline();
+	}
+
+	// Create a TSet from our TArray
 	TSet<FString> TagSet = TSet<FString>(TagArrayParsed);
+
 	return TagSet;
 }
 

@@ -21,6 +21,8 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	// Construct Widget
 	void Construct(const FArguments& InArgs);
 
+	~SPublisherWindow();
+
 	// Construct our Thumbnail Widget
 	TSharedPtr<SWidget> ConstructThumbnailWidget();
 

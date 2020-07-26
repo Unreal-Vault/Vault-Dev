@@ -107,7 +107,7 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 
 	void ConstructMetadataWidget(TSharedPtr<FVaultMetadata> AssetMeta);
 	TSharedPtr<SVerticalBox> MetadataWidget;
-	TSharedPtr<SBox> MetaWrapper;
+	//TSharedPtr<SBox> MetaWrapper;
 	
 	// GLOBALS
 
@@ -141,6 +141,16 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 	// Utility
 
 	FText DisplayTotalAssetsInLibrary() const;
+
+
+	FReply OnRefreshLibraryClicked();
+
+	void RefreshLibrary();
+
+
+
+
+
 
 public:
 

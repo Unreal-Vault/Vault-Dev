@@ -55,7 +55,7 @@ TSharedRef< FSlateStyleSet > FVaultStyle::Create()
 	Style->Set("Vault.PluginAction", new IMAGE_BRUSH(TEXT("Vault_Up"), Icon40x40));
 
 	Style->Set("MetaTitleText", FTextBlockStyle()
-		.SetFont(DEFAULT_FONT("Fonts/Roboto - Regular", 14.f))
+		.SetFont(DEFAULT_FONT("Fonts/Roboto - Regular", 12.f))
 		.SetColorAndOpacity(FLinearColor(FLinearColor::White))
 		);
 

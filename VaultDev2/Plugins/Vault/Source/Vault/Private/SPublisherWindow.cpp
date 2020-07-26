@@ -102,7 +102,6 @@ private:
 
 void SPublisherWindow::Construct(const FArguments& InArgs)
 {
-
 	// Store a shared this
 	TWeakPtr<SPublisherWindow> WeakPtr = SharedThis(this);
 
@@ -382,26 +381,16 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 				.AutoHeight()
 				.Padding(FMargin(0, 5, 0, 0))
 				[
-					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-					.Padding(FMargin(0.f, 0.f, 1.f, 0.f))
+					SNew(SButton)
+					.ContentPadding(FMargin(6.f))
+					.ButtonStyle(FEditorStyle::Get(), "FlatButton.Info")
+					.ToolTipText(LOCTEXT("LoadMapFromPresetTooltip", "Load Map from Preset. \n This will load either the Preset map, or if you have a map file to publish, will load this map. \nThis is hard-coded in this release, but future releases will support multiple choices"))
+					.OnClicked(this, &SPublisherWindow::GenerateMapFromPreset)
 					[
-						SNew(SButton)
-						.Text(LOCTEXT("GeneratePythonMapLabel", "Generate Map from Python"))
-						.ButtonStyle(FEditorStyle::Get(), "FlatButton.Info")
-						.IsEnabled(this, &SPublisherWindow::IsPythonMapGenAvailable)
-						.ToolTipText(LOCTEXT("LoadMapFromPythonTooltip", "Not available in this release"))
-						.OnClicked(this, &SPublisherWindow::GenerateMapFromPython)
-					]
-					+ SHorizontalBox::Slot()
-					.Padding(FMargin(1.f, 0.f, 0.f, 0.f))
-					[
-						SNew(SButton)
+						SNew(STextBlock)
+						.Justification(ETextJustify::Center)
 						.Text(LOCTEXT("LoadPresetMapLabel", "Load Preset Map"))
-						.ButtonStyle(FEditorStyle::Get(), "FlatButton.Info")
-						.IsEnabled(true)
-						.ToolTipText(LOCTEXT("LoadMapFromPresetTooltip", "Load Map from Preset. \n This will load either the Preset map, or if you have a map file to publish, will load this map. \nThis is hard-coded in this release, but future releases will support multiple choices"))
-						.OnClicked(this, &SPublisherWindow::GenerateMapFromPreset)
+						.TextStyle(FEditorStyle::Get(), "NormalText.Important")
 					]
 				]
 				+ SVerticalBox::Slot()
@@ -440,6 +429,14 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 
 }
 
+SPublisherWindow::~SPublisherWindow()
+{
+	if (ShotTexture)
+	{
+		ShotTexture->ClearFlags(RF_Standalone);
+	}
+}
+
 TSharedPtr<SWidget> SPublisherWindow::ConstructThumbnailWidget()
 {
 	// Init the thumb brush. these settings are only for pre-image choice
@@ -461,18 +458,20 @@ TSharedPtr<SWidget> SPublisherWindow::ConstructThumbnailWidget()
 			.HAlign(HAlign_Center)
 			.VAlign(VAlign_Center)
 			[
+				// #todo Some problems with validity here, so lets just disable this for now
 				SNew(SCircularThrobber)
 				.Radius(48)
 				.NumPieces(10)
 				.Period(0.5f)
-				.Visibility_Lambda([this]()
-				{
-					if (ShotTexture->IsValidLowLevel())
-					{
-						return ShotTexture->IsFullyStreamedIn() ? EVisibility::Hidden : EVisibility::SelfHitTestInvisible;
-					}
-					return EVisibility::Hidden;
-				})
+				.Visibility(EVisibility::Hidden)
+				//.Visibility_Lambda([this]()
+				//{
+				//	if (ShotTexture && ShotTexture->IsValidLowLevel())
+				//	{
+				//		return ShotTexture->IsFullyStreamedIn() ? EVisibility::Hidden : EVisibility::SelfHitTestInvisible;
+				//	}
+				//	return EVisibility::Hidden;
+				//})
 			]
 		];
 }
@@ -480,15 +479,15 @@ TSharedPtr<SWidget> SPublisherWindow::ConstructThumbnailWidget()
 FReply SPublisherWindow::OnCaptureImageFromViewport()
 {
 	ShotTexture = CreateThumbnailFromScene();
-	FSlateBrush Brush;
+	ShotTexture->SetFlags(RF_Standalone);
 
 	if (ShotTexture)
 	{
-		Brush.SetResourceObject(ShotTexture);
-		Brush.DrawAs = ESlateBrushDrawType::Image;
-		Brush.SetImageSize(FVector2D(VAULT_PUBLISHER_THUMBNAIL_SIZE, VAULT_PUBLISHER_THUMBNAIL_SIZE));
+		ThumbBrush.SetResourceObject(ShotTexture);
+		ThumbBrush.SetImageSize(FVector2D(VAULT_PUBLISHER_THUMBNAIL_SIZE));
 	}
-	ThumbBrush = Brush;
+	
+	//ThumbBrush = Brush;
 	return FReply::Handled();
 }
 
@@ -509,15 +508,20 @@ FReply SPublisherWindow::OnCaptureImageFromFile()
 
 const FSlateBrush* SPublisherWindow::GetThumbnailImage() const
 {
-	if (ShotTexture && ShotTexture->IsValidLowLevel())
-	{
-		return &ThumbBrush;
-	}
+	//if (ThumbBrush.GetRenderingResource().IsValid())
+	//{
+	//}
+	return &ThumbBrush;
+
+	//if (ShotTexture && ShotTexture->IsValidLowLevel())
+	//{
+	//	return &ThumbBrush;
+	//}
 
 	// #todo. Since slate redraws on tick, this is creating a new brush every run, its also flooding the log.
-	FSlateBrush* NullBrush = new FSlateBrush();
-	NullBrush->SetImageSize(FVector2D(256.0));
-	return NullBrush;
+	//FSlateBrush* NullBrush = new FSlateBrush();
+	//NullBrush->SetImageSize(FVector2D(256.0));
+	//return NullBrush;
 }
 
 UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
@@ -558,7 +562,10 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
 
 	FCreateTexture2DParameters Params;
 	Params.bDeferCompression = true;
+	Params.CompressionSettings = TC_Default;
+	Params.bSRGB = true;
 
+	// Create Image. Note - Image flagged as RF_Standalone, so its not GC'ed with level changes, but must be cleaned up to prevent long term memory use
 	UTexture2D* ResizedTexture = FImageUtils::CreateTexture2D(VAULT_PUBLISHER_CAPTURE_SIZE, VAULT_PUBLISHER_CAPTURE_SIZE, ScaledBitmap, GetTransientPackage(), FString(), RF_NoFlags, Params);
 	
 
@@ -603,6 +610,7 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromFile()
 	}
 
 	UTexture2D* OriginalTexture = FImageUtils::ImportFileAsTexture2D(SourceImagePath);
+	//OriginalTexture->SetFlags(RF_Standalone);
 	if (!OriginalTexture)
 	{
 		return nullptr;
@@ -754,20 +762,20 @@ TArray<FString> SPublisherWindow::GetAssetDependancies(const FName AssetPath) co
 
 FText SPublisherWindow::GetSecondaryAssetList() const
 {
-	//TSoftObjectPtr<UObject> Asset = GetMutableDefault<UAssetPublisher>()->PrimaryAsset;
-
 	if (CurrentlySelectedAsset.IsValid())
 	{
 		FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>("AssetRegistry");
-		//FAssetData AssetPublisherData;
-		//UAssetManager::GetIfValid()->GetAssetDataForPath(Asset.ToSoftObjectPath(), AssetPublisherData);
 
+		// Build our list of dependencies
 		TArray<FString> Dependancies = GetAssetDependancies(CurrentlySelectedAsset.PackageName);
+
+		// Dependancies includes original item, so lets remove that
 		Dependancies.Remove(CurrentlySelectedAsset.PackageName.ToString());
 
 		FString FormattedList;
 		for (FString Dependant : Dependancies)
 		{
+			Dependant = FPaths::GetCleanFilename(Dependant);
 			FormattedList += (Dependant);
 			FormattedList += LINE_TERMINATOR;
 		}

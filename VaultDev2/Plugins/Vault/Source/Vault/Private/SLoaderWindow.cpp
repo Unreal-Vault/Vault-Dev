@@ -197,10 +197,12 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 						// Left Sidebar!
 						SNew(SVerticalBox)
 						+SVerticalBox::Slot()
+						.Padding(0,3,0,5)
 						.AutoHeight()
 						[
 							SNew(STextBlock)
-							.Text(LOCTEXT("VaultLoaderSidebarHeaderLabel", "VAULT LOADER"))
+							.Text(LOCTEXT("VaultLoaderSidebarHeaderLabel", "FILTERING"))
+							.TextStyle(FVaultStyle::Get(), "MetaTitleText")
 						]
 
 					// Asset List Amount
@@ -208,6 +210,7 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 					.AutoHeight()
 					.HAlign(HAlign_Left)
 					.VAlign(VAlign_Top)
+					.Padding(0,0,0,5)
 					[
 						SNew(STextBlock)
 						.Text(this, &SLoaderWindow::DisplayTotalAssetsInLibrary)
@@ -310,6 +313,7 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 								SAssignNew(StrictSearchCheckBox, SCheckBox)
 								.Style(FCoreStyle::Get(), "ToggleButtonCheckbox")
 								.Padding(FMargin( 5.f,0.f ))
+								.ToolTipText(LOCTEXT("StrictSearchToolTip", "Search only the Pack Names"))
 								[
 									SNew(SBox)
 									.VAlign(VAlign_Center)
@@ -350,17 +354,24 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 						[
 							SNew(SHorizontalBox)
 							+ SHorizontalBox::Slot()
+							.AutoWidth()
 							[
-								SNew(STextBlock)
-								.Text(LOCTEXT("selectedURLLabel", "Selected Asset URL"))
+								SNew(SButton)
+								.Text(LOCTEXT("RefreshLibraryScreenBtnLbl", "Refresh Library"))
+								.OnClicked(this, &SLoaderWindow::OnRefreshLibraryClicked)
 							]
-
+							+ SHorizontalBox::Slot()
+								[
+									SNew(SSpacer)
+								]
 							+ SHorizontalBox::Slot()
 								[
 									// Scale Slider
 									SNew(SHorizontalBox)
 									+ SHorizontalBox::Slot()
-									.Padding(FMargin(0, 3, 0, 0))
+									.AutoWidth()
+									.HAlign(HAlign_Right)
+									.Padding(FMargin(0, 0, 0, 0))
 									[
 										SNew(STextBlock)
 										.Text(LOCTEXT("ScaleSliderLabel", "Thumbnail Scale"))
@@ -393,7 +404,7 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 							.AutoHeight()
 							[
 								SNew(STextBlock)
-								.Text(LOCTEXT("VaultLoaderRightSidebarHeaderLabel", "Metadata"))
+								.Text(LOCTEXT("VaultLoaderRightSidebarHeaderLabel", "METADATA"))
 								.TextStyle(FVaultStyle::Get(), "MetaTitleText")
 					
 							]
@@ -401,7 +412,7 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 							+ SVerticalBox::Slot()
 							.FillHeight(1)
 							[
-								SAssignNew(MetaWrapper, SBox)
+								SNew(SBox)
 								[
 									MetadataWidget.ToSharedRef()
 								]
@@ -683,7 +694,7 @@ void SLoaderWindow::ConstructMetadataWidget(TSharedPtr<FVaultMetadata> AssetMeta
 	}
 
 	// Padding between words
-	const FMargin WordPadding = FMargin(0.f,15.f,0.f,0.f);
+	const FMargin WordPadding = FMargin(0.f,12.f,0.f,0.f);
 
 	MetadataWidget->ClearChildren();
 	
@@ -696,6 +707,18 @@ void SLoaderWindow::ConstructMetadataWidget(TSharedPtr<FVaultMetadata> AssetMeta
 			.Text(FText::FromName(AssetMeta->PackName))
 	];
 
+	// Description
+	MetadataWidget->AddSlot()
+		.AutoHeight()
+
+		.Padding(WordPadding)
+		[
+			SNew(STextBlock)
+			.AutoWrapText(true)
+			//.Text(FText::Format(LOCTEXT("Meta_DescLbl", "Description: \n{0}"), FText::FromString(AssetMeta->Description)))
+			.Text(FText::FromString(AssetMeta->Description))
+		];
+
 	// Author
 	MetadataWidget->AddSlot()
 		.AutoHeight()
@@ -705,14 +728,7 @@ void SLoaderWindow::ConstructMetadataWidget(TSharedPtr<FVaultMetadata> AssetMeta
 			.Text(FText::Format(LOCTEXT("Meta_AuthorLbl", "Author: {0}"), FText::FromName(AssetMeta->Author)))
 		];
 
-	// Description
-	MetadataWidget->AddSlot()
-		.AutoHeight()
-		.Padding(WordPadding)
-		[
-			SNew(STextBlock)
-			.Text(FText::Format(LOCTEXT("Meta_DescLbl", "Description: {0}"), FText::FromString(AssetMeta->Description)))
-		];
+
 
 	// Creation Date
 	MetadataWidget->AddSlot()
@@ -732,14 +748,33 @@ void SLoaderWindow::ConstructMetadataWidget(TSharedPtr<FVaultMetadata> AssetMeta
 			.Text(FText::Format(LOCTEXT("Meta_LastModifiedLbl", "Last Modified: {0}"), FText::FromString(AssetMeta->LastModified.ToString())))
 		];
 
-	// Tags List
+	// Tags List - Header
 	MetadataWidget->AddSlot()
 		.AutoHeight()
 		.Padding(WordPadding)
 		[
 			SNew(STextBlock)
-			.Text(FText::Format(LOCTEXT("Meta_TagsLbl", "Tags: {0}"), FText::FromString(FString::Join(AssetMeta->Tags.Array(), TEXT(",")))))
+			.AutoWrapText(true)
+			//.Text(FText::Format(LOCTEXT("Meta_TagsLbl", "Tags: {0}"), FText::FromString(FString::Join(AssetMeta->Tags.Array(), TEXT(",")))))
+			.Text(LOCTEXT("Meta_TagsLbl", "Tags:"))
 		];
+
+	// Tags, Per Tag. Instead of using Join, we add them as separate lines for ease of reading
+	for (auto MyTag : AssetMeta->Tags)
+	{
+		MyTag.TrimStartAndEndInline();
+		const FText TagName = FText::FromString(MyTag);
+
+		//MyTag.RemoveSpacesInline();
+		MetadataWidget->AddSlot()
+			.AutoHeight()
+			[
+				SNew(STextBlock)
+				.Text(FText::Format(LOCTEXT("PerTagKeyFor{0}", "- {1}"), TagName, TagName))
+			];
+	}
+
+	
 
 	// Object List 
 	MetadataWidget->AddSlot()
@@ -747,6 +782,7 @@ void SLoaderWindow::ConstructMetadataWidget(TSharedPtr<FVaultMetadata> AssetMeta
 		.Padding(WordPadding)
 		[
 			SNew(STextBlock)
+			.AutoWrapText(true)
 			.Text(FText::Format(LOCTEXT("Meta_FilesLbl", "Files: {0}"), FText::FromString(FString::Join(AssetMeta->ObjectsInPack.Array(), TEXT(",")))))
 		];
 
@@ -799,8 +835,9 @@ void SLoaderWindow::DeleteAssetPack(TSharedPtr<FVaultMetadata> InPack)
 
 
 	MetaFilesCache.Remove(*InPack);
-	UpdateFilteredAssets();
-	TileView->RebuildList();
+	RefreshLibrary();
+	//UpdateFilteredAssets();
+	//TileView->RebuildList();
 
 }
 
@@ -831,7 +868,7 @@ void SLoaderWindow::UpdateFilteredAssets()
 			if (ActiveTagFilters.Contains(UserTag))
 			{
 				FilteredAssetItems.Add(MakeShareable(new FVaultMetadata(Asset)));
-				continue;
+				break;
 			}
 		}
 
@@ -862,6 +899,23 @@ FText SLoaderWindow::DisplayTotalAssetsInLibrary() const
 
 	FText Display = FText::Format(LOCTEXT("displayassetcountlabel", "Total Assets in library: {0}"),assetCount);
 	return Display;
+}
+
+FReply SLoaderWindow::OnRefreshLibraryClicked()
+{
+	RefreshLibrary();
+	return FReply::Handled();
+}
+
+void SLoaderWindow::RefreshLibrary()
+{
+	RefreshAvailableFiles();
+	PopulateTagArray();
+	PopulateDeveloperNameArray();
+
+	//SearchBox->AdvanceSearch//
+	//TileView->RebuildList();
+	UpdateFilteredAssets();
 }
 
 void SLoaderWindow::ModifyActiveTagFilters(FString TagModified, bool bFilterThis)
