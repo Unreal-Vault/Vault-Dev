@@ -9,6 +9,8 @@
 #include "Vault.h"
 
 
+UAssetPublisher::FOnVaultPackagingCompleted UAssetPublisher::OnVaultPackagingCompletedDelegate;
+
 bool UAssetPublisher::PackageSelected(TSet<FString> PackageObjects, FVaultMetadata& Meta)
 {
 	UpdateSystemMeta(Meta);
@@ -58,6 +60,7 @@ bool UAssetPublisher::PackageSelected(TSet<FString> PackageObjects, FVaultMetada
 	// Metadata Writing
 
 	FMetadataOps::WriteMetadata(Meta);
+	OnVaultPackagingCompletedDelegate.ExecuteIfBound();
 
 	return true;
 
@@ -67,4 +70,5 @@ void UAssetPublisher::UpdateSystemMeta(FVaultMetadata& Metadata)
 {
 	Metadata.MachineID = FGenericPlatformMisc::GetLoginId();
 }
+
 

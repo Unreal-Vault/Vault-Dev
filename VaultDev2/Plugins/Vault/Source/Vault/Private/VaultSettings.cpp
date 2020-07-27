@@ -12,7 +12,10 @@
 // For simplicity in changing keys and looking them up, here's all the keys
 
 // Folder Names
-static const FString DefaultVaultSettingsFolder("Vault");
+
+// These 2 vars registered in header for access elsewhere.
+const FString FVaultSettings::DefaultVaultSettingsFolder("Vault");
+const FString FVaultSettings::DefaultGlobalsPath(FPlatformProcess::UserDir() + DefaultVaultSettingsFolder);
 
 // Filenames
 static const FString GlobalSettingsFilename = "VaultGlobalSettings.json";
@@ -20,11 +23,11 @@ static const FString GlobalTagPoolFilename = "VaultTags.json";
 static const FString LocalSettingsFilename = "VaultLocalSettings.json";
 
 // File paths
-static const FString DefaultGlobalsPath = FPlatformProcess::UserDir() + DefaultVaultSettingsFolder;
-static const FString DefaultGlobalTagsPath = FPlatformProcess::UserDir() + DefaultVaultSettingsFolder;
+//static const FString DefaultGlobalsPath = FPlatformProcess::UserDir() + DefaultVaultSettingsFolder;
+static const FString DefaultGlobalTagsPath = FPlatformProcess::UserDir() + FVaultSettings::DefaultVaultSettingsFolder;
 static const FString VaultPluginRoot = IPluginManager::Get().FindPlugin(TEXT("Vault"))->GetBaseDir();
 static const FString LocalSettingsFilePathFull = VaultPluginRoot / LocalSettingsFilename;
-static const FString GlobalSettingsFilePathFull = DefaultGlobalsPath / GlobalSettingsFilename;
+static const FString GlobalSettingsFilePathFull = FVaultSettings::DefaultGlobalsPath / GlobalSettingsFilename;
 
 // Json Cloud, just to make it easy to update and refer back too:
 static const FString TagsKey = "Tags";

@@ -30,6 +30,15 @@ public:
 	// Get our Asset Library root path, defined in the global settings. 
 	FString GetAssetLibraryRoot();
 
+	// Json Reusable Functions
+	FString GetGlobalSettingsFilePathFull();
+
+	// Json Reusable Functions
+	FString GetVaultPluginVersion();
+
+	static const FString DefaultVaultSettingsFolder;
+	static const FString DefaultGlobalsPath;
+
 private:
 
 	// Easy write to file
@@ -43,15 +52,9 @@ private:
 
 	// Generates the default tags file for new installs
 	void GenerateBaseTagPoolFile();
-	
-	// Json Reusable Functions
-	FString GetGlobalSettingsFilePathFull();
 
 	// Json Reusable Functions
 	FString GetGlobalTagsPoolFilePathFull();
-
-	// Json Reusable Functions
-	FString GetVaultPluginVersion();
 
 	// Updates elements of the JSON files that should change on init.
 	void UpdateVaultFiles();

@@ -44,6 +44,7 @@ const FVector2D Icon16x16(16.0f, 16.0f);
 const FVector2D Icon20x20(20.0f, 20.0f);
 const FVector2D Icon32x32(32.0f, 32.0f);
 const FVector2D Icon40x40(40.0f, 40.0f);
+const FVector2D Icon128x128(128.f, 128.f);
 
 TSharedRef< FSlateStyleSet > FVaultStyle::Create()
 {
@@ -51,6 +52,8 @@ TSharedRef< FSlateStyleSet > FVaultStyle::Create()
 	Style->SetContentRoot(IPluginManager::Get().FindPlugin("Vault")->GetBaseDir() / TEXT("Resources"));
 
 	Style->Set("Vault.PluginAction", new IMAGE_BRUSH(TEXT("VaultIcon_40px"), Icon40x40));
+
+	Style->Set(("Vault.Icon128px"), new IMAGE_BRUSH(TEXT("Icon128"), Icon128x128));
 
 	Style->Set("MetaTitleText", FTextBlockStyle()
 		.SetFont(DEFAULT_FONT("Fonts/Roboto - Regular", 12.f))

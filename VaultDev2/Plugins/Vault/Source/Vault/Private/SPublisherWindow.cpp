@@ -45,6 +45,9 @@
 #include "ImageWriteBlueprintLibrary.h"
 #include <Interfaces/IPluginManager.h>
 #include <FileHelpers.h>
+#include <ILevelViewport.h>
+
+#include "LevelEditorViewport.h" // include editor for screenshot stuff
 
 
 #define LOCTEXT_NAMESPACE "FVaultPublisher"
@@ -464,14 +467,14 @@ TSharedPtr<SWidget> SPublisherWindow::ConstructThumbnailWidget()
 				.NumPieces(10)
 				.Period(0.5f)
 				.Visibility(EVisibility::Hidden)
-				//.Visibility_Lambda([this]()
-				//{
-				//	if (ShotTexture && ShotTexture->IsValidLowLevel())
-				//	{
-				//		return ShotTexture->IsFullyStreamedIn() ? EVisibility::Hidden : EVisibility::SelfHitTestInvisible;
-				//	}
-				//	return EVisibility::Hidden;
-				//})
+				.Visibility_Lambda([this]()
+				{
+					if (ShotTexture && ShotTexture->IsValidLowLevel())
+					{
+						return ShotTexture->IsFullyStreamedIn() ? EVisibility::Hidden : EVisibility::SelfHitTestInvisible;
+					}
+					return EVisibility::Hidden;
+				})
 			]
 		];
 }
@@ -536,6 +539,11 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
 	// Cache viewport ptr
 	FLevelEditorViewportClient* OldViewportClient = GCurrentLevelEditingViewportClient;
 
+	// Store and enable Game View to keep the screenshot clean
+	bool bWasInGameView = GCurrentLevelEditingViewportClient->IsInGameView();
+	GCurrentLevelEditingViewportClient->SetGameView(true);
+	
+
 	// Clear to remove viewports selection box
 	GCurrentLevelEditingViewportClient = nullptr;
 
@@ -556,6 +564,7 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
 
 	// Redraw viewport to restore highlight
 	GCurrentLevelEditingViewportClient = OldViewportClient;
+	GCurrentLevelEditingViewportClient->SetGameView(bWasInGameView);
 	Viewport->Draw();
 
 	FScopedTransaction Transaction(LOCTEXT("CapturePackageThumbnail", "Capture Package Image from Viewport"));

@@ -3,6 +3,7 @@
 
 #include "SVaultSetupWizard.h"
 #include "VaultStyle.h"
+#include "VaultSettings.h"
 
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Input/SButton.h"
@@ -52,7 +53,7 @@ void SVaultSetupWizard::Construct(const FArguments& Args)
 					.DecoratorStyleSet(&FVaultStyle::Get())
 					.TextStyle(FVaultStyle::Get(), "RichText.Text")
 					.Text(LOCTEXT("VaultSetupWizardMsg", 
-						"<RichText.Header> Vault Setup Wizard </>\n\n" \
+						"<img src=\"Vault.PluginAction\"/> <RichText.Header> Vault Setup Wizard </>\n\n" \
 						"Welcome to the Vault Plugin. Vault has detected that some or all user settings were missing, so I assume this is your first run.\n\n" \
 						
 						"Vault has automatically created your Global Settings, Local Settings, and an empty Tag Library for you to setup as you wish.\n\n" \
@@ -73,7 +74,19 @@ void SVaultSetupWizard::Construct(const FArguments& Args)
 						"I hope you enjoy using Vault. I will soon be setting up a proper issue and feature tracking solution, so for now, please accept this is a early beta build."
 				
 					))
+					+ SRichTextBlock::ImageDecorator()
 				]
+
+				+ SVerticalBox::Slot()
+					.AutoHeight()
+					.Padding(20, 10, 20, 20)
+					[
+						SNew(SRichTextBlock)
+						.WrapTextAt(900)
+						.DecoratorStyleSet(&FVaultStyle::Get())
+						.TextStyle(FVaultStyle::Get(), "RichText.Text.Fancy")
+						.Text(FText::Format(LOCTEXT("VaultWizardPathInfo", "Vault Default Global Path: {0}"), FText::FromString(FVaultSettings::Get().DefaultGlobalsPath)))
+					]
 
 				+ SVerticalBox::Slot()
 				.AutoHeight()

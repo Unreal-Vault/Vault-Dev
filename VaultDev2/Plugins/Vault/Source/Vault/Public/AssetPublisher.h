@@ -18,27 +18,18 @@ public:
 	// Package Step, Called from UI
 	static bool PackageSelected(TSet<FString> PackageObjects, FVaultMetadata& Meta);
 
+	/** Callback that fires after Publishing has completed on an Asset */
+	DECLARE_DELEGATE(FOnVaultPackagingCompleted);
+	//static FOnVaultPackagingCompleted& OnVaultPackagingCompleted() { return OnVaultPackagingCompletedDelegate; }
+	static FOnVaultPackagingCompleted OnVaultPackagingCompletedDelegate;
 private:
 
 	static void UpdateSystemMeta(FVaultMetadata& Metadata);
+
+	
 	
 };
 
 
-UCLASS()
-class VAULT_API UAssetPublisherTags : public UObject
-{
-	GENERATED_BODY()
-public:
 
-	// This class for now just holds the custom details and nothing else, we might be able to 
-	// scrap this and use the assetPublisher ( somehow?!)
-
-	//UPROPERTY()
-	//static FString TagsListInternal;
-
-	//static void UpdateTagsFromGUI(FString RawTagList) { TagsListInternal = RawTagList; }
-
-
-};
 

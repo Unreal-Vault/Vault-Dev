@@ -17,6 +17,7 @@
 #include "AssetToolsModule.h"
 
 #include "VaultStyle.h"
+#include "AssetPublisher.h"
 
 
 #define LOCTEXT_NAMESPACE "SVaultLoader"
@@ -163,6 +164,9 @@ void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTa
 	PopulateBaseAssetList();
 	PopulateTagArray();
 	PopulateDeveloperNameArray();
+
+	// Bind to our publisher so we can refresh automatically when the user publishes an asset (they wont need to import it, but its a visual feedback for the user to check it appeared in the library
+	UAssetPublisher::OnVaultPackagingCompletedDelegate.BindRaw(this, &SLoaderWindow::OnNewAssetPublished);
 	
 	// Construct the Holder for the Metadata List
 	MetadataWidget = SNew(SVerticalBox);
@@ -916,6 +920,11 @@ void SLoaderWindow::RefreshLibrary()
 	//SearchBox->AdvanceSearch//
 	//TileView->RebuildList();
 	UpdateFilteredAssets();
+}
+
+void SLoaderWindow::OnNewAssetPublished()
+{
+	RefreshLibrary();
 }
 
 void SLoaderWindow::ModifyActiveTagFilters(FString TagModified, bool bFilterThis)

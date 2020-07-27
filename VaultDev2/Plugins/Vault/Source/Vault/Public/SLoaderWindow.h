@@ -147,8 +147,8 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 
 	void RefreshLibrary();
 
-
-
+	// Bound to Static delegate in Asset Publisher, so we can update when user pushes a new asset
+	void OnNewAssetPublished();
 
 
 
