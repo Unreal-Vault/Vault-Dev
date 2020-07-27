@@ -1,14 +1,13 @@
 // Copyright Daniel Orchard 2020
 
 #include "AssetPublisherTagsCustomization.h"
-#include "Widgets/Input/SEditableTextBox.h"
+#include "VaultSettings.h"
+
 #include "DetailWidgetRow.h"
-#include "AssetPublisher.h"
-#include "SPublisherWindow.h"
 #include "EditorFontGlyphs.h"
 #include "Slate.h"
 #include "SlateExtras.h"
-#include "VaultSettings.h"
+
 
 #define LOCTEXT_NAMESPACE "FVaultPublisherTagsCustomization"
 
@@ -18,7 +17,7 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 {
 	TagTextFilterPtr = MakeShareable(new FTextFilterExpressionEvaluator(ETextFilterExpressionEvaluatorMode::BasicString));
 	
-	// Refresh available tags into our array from the json file
+	// Refresh available tags into our array from the Json file
 	CacheBaseTagsPool();
 
 	TSharedRef<SBox> TagsWidget = SNew(SBox)
@@ -146,7 +145,6 @@ void SPublisherTagsWidget::Construct(const FArguments& InArgs)
 			TagsWidget
 		];
 }
-
 
 TSet<FString> SPublisherTagsWidget::GetUserSelectedTags()
 {

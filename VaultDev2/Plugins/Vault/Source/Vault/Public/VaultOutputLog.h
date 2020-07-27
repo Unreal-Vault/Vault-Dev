@@ -36,12 +36,8 @@ public:
 
 	TArray<FName> AcceptedLogCategories;
 
-
 	// Delegate for the Publisher List to Bind too. 
 	FOnVaultMessageReceived OnVaultMessageReceived;
-
-	// Construct the Output Log Widget
-	//TSharedRef<SWidget> ConstructVaultOutputLog();
 
 	// Ptr to our List
 	TSharedPtr<SListView<TSharedPtr< FVaultLogMessage>>> VaultLogList;

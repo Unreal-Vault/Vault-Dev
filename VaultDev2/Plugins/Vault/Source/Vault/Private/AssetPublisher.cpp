@@ -1,12 +1,12 @@
 // Copyright Daniel Orchard 2020
 
 #include "AssetPublisher.h"
-#include "PakFileUtilities.h"
+#include "Vault.h"
 #include "VaultSettings.h"
+#include "PakFileUtilities.h"
 #include "Misc/FileHelper.h"
 #include "GenericPlatform/GenericPlatformMisc.h"
 #include "MetadataOps.h"
-#include "Vault.h"
 
 
 UAssetPublisher::FOnVaultPackagingCompleted UAssetPublisher::OnVaultPackagingCompletedDelegate;

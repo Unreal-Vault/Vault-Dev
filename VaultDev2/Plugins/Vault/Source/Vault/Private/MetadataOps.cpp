@@ -2,20 +2,17 @@
 
 #include "MetadataOps.h"
 #include "Vault.h"
+#include "VaultSettings.h"
+
 #include "Misc/Paths.h"
 #include "Misc/DateTime.h"
 #include "JsonUtilities/Public/JsonUtilities.h"
-#include "VaultSettings.h"
 #include "HAL/FileManager.h"
-//#include <JsonReader.h>
 
-FMetadataOps::FMetadataOps()
-{
-}
 
 FVaultMetadata FMetadataOps::ReadMetadata(FString File)
 {
-	// Raw data holder for json
+	// Raw data holder for Json
 	FString MetadataRaw;
 	FFileHelper::LoadFileToString(MetadataRaw, *File);
 
@@ -35,7 +32,6 @@ bool FMetadataOps::WriteMetadata(FVaultMetadata& Metadata)
 	FJsonSerializer::Serialize(ParseMetadataToJson(Metadata).ToSharedRef(), Writer);
 
 	const FString Directory = FVaultSettings::Get().GetAssetLibraryRoot();
-
 	const FString Filepath = Directory / Metadata.PackName.ToString() + ".meta";
 	
 	return FFileHelper::SaveStringToFile(OutputString, *Filepath);
@@ -73,8 +69,6 @@ TArray<FVaultMetadata> FMetadataOps::FindAllMetadataInLibrary()
 		}
 	};
 
-
-
 	// Create an instance of our custom visitor	   	 
 	FFindMetaFilesVisitor Visitor;
 
@@ -93,7 +87,6 @@ TArray<FVaultMetadata> FMetadataOps::FindAllMetadataInLibrary()
 		FJsonSerializer::Deserialize(JsonReader, MetaJson);
 	
 		MetaList.Add(ParseMetaJsonToVaultMetadata(MetaJson));
-	
 	}
 
 	return MetaList;
@@ -140,7 +133,6 @@ FVaultMetadata FMetadataOps::ParseMetaJsonToVaultMetadata(TSharedPtr<FJsonObject
 	Metadata.ObjectsInPack = Objects;
 	
 	return Metadata;
-
 }
 
 TSharedPtr<FJsonObject> FMetadataOps::ParseMetadataToJson(FVaultMetadata Metadata)
@@ -152,17 +144,14 @@ TSharedPtr<FJsonObject> FMetadataOps::ParseMetadataToJson(FVaultMetadata Metadat
 	MetaJson->SetStringField("Description", Metadata.Description);
 
 	// Tags
-
 	TArray<TSharedPtr<FJsonValue>> TagsToWrite;
 	for (FString TagText : Metadata.Tags)
 	{
 		TagsToWrite.Add(MakeShareable(new FJsonValueString(TagText)));
-	
 	}
 	MetaJson->SetArrayField("Tags", TagsToWrite);
 
 	// Dates
-
 	MetaJson->SetStringField("CreationDate", Metadata.CreationDate.ToString());
 	MetaJson->SetStringField("LastModified", Metadata.LastModified.ToString());
 
@@ -178,9 +167,4 @@ TSharedPtr<FJsonObject> FMetadataOps::ParseMetadataToJson(FVaultMetadata Metadat
 	MetaJson->SetArrayField("ObjectsInPack", ObjectsToWrite);
 
 	return MetaJson;
-
-}
-
-FMetadataOps::~FMetadataOps()
-{
 }

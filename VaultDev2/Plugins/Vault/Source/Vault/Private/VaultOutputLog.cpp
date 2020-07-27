@@ -1,6 +1,5 @@
 // Copyright Daniel Orchard 2020
 
-
 #include "VaultOutputLog.h"
 #include "CoreGlobals.h"
 

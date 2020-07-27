@@ -9,7 +9,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogVault, Log, All);
 
-
 class FToolBarBuilder;
 class FMenuBuilder;
 class UAssetPublisher;

@@ -1,53 +1,28 @@
 // Copyright Daniel Orchard 2020
 
 #include "SPublisherWindow.h"
-#include "Misc/DateTime.h"
-#include "Json.h"
-#include "Engine/Engine.h"
-#include "Engine/GameViewportClient.h"
-#include "Slate/SceneViewport.h"
-#include <Kismet/GameplayStatics.h>
-#include <Editor.h>
-#include <EngineModule.h>
-#include <Kismet/KismetRenderingLibrary.h>
-#include "Engine/SceneCapture2D.h"
-#include "Components/SceneCaptureComponent2D.h"
-#include "Styling/SlateBrush.h"
-#include "VaultSettings.h"
-#include "WorkflowOrientedApp/SContentReference.h" //required?
-#include "PropertyEditorModule.h"
-#include <AssetRegistryModule.h>
-#include <Editor/EditorEngine.h>
-#include <ContentBrowserModule.h> //required?
 #include "AssetPublisher.h"
 #include "AssetPublisherTagsCustomization.h"
 #include "Vault.h"
+#include "VaultSettings.h"
 
-// new
-#include "IDetailsView.h"
-#include "Framework\Commands\UICommandList.h"
-#include <LevelEditor.h>
-#include "Slate/SGameLayerManager.h"
-#include <Engine/AssetManager.h>
+#include "Misc/DateTime.h"
+#include "Engine/Engine.h"
+#include "Slate/SceneViewport.h"
+#include "Styling/SlateBrush.h"
+#include "Engine/AssetManager.h"
 #include "HAL/PlatformFilemanager.h"
 #include "HAL/FileManager.h"
-#include "HighResScreenshot.h" //required?
-#include <ImageUtils.h>
-#include <FunctionalUIScreenshotTest.h>
-#include <EditorSupportDelegates.h>
 #include "IDesktopPlatform.h"
 #include "DesktopPlatformModule.h"
-#include "PropertyCustomizationHelpers.h"
-
+#include "FileHelpers.h"
+#include "ImageUtils.h"
+#include "PropertyCustomizationHelpers.h" //Asset Picker
 #include "Widgets/Input/SEditableTextBox.h"
-
 #include "EditorFontGlyphs.h"
 #include "ImageWriteBlueprintLibrary.h"
-#include <Interfaces/IPluginManager.h>
-#include <FileHelpers.h>
-#include <ILevelViewport.h>
-
-#include "LevelEditorViewport.h" // include editor for screenshot stuff
+#include "Interfaces/IPluginManager.h"
+#include "LevelEditorViewport.h" // Enabling GameView for Thumbnail Gen
 
 
 #define LOCTEXT_NAMESPACE "FVaultPublisher"
@@ -59,14 +34,13 @@ class SVaultLogMessageListRow : public SMultiColumnTableRow<TSharedPtr<FVaultLog
 public:
 	SLATE_BEGIN_ARGS(SVaultLogMessageListRow) { }
 	SLATE_ARGUMENT(TSharedPtr<FVaultLogMessage>, Message)
-		SLATE_END_ARGS()
+	SLATE_END_ARGS()
 
-		void Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwnerTableView)
+	void Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& InOwnerTableView)
 	{
 		Message = InArgs._Message;
 		SMultiColumnTableRow<TSharedPtr<FVaultLogMessage>>::Construct(FSuperRowType::FArguments(), InOwnerTableView);
 	}
-
 	virtual TSharedRef<SWidget> GenerateWidgetForColumn(const FName& ColumnName) override
 	{
 		return SNew(SBox)
@@ -119,11 +93,9 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 		.DisplayUseSelected(true)
 		.DisplayBrowse(true)
 		.NewAssetFactories(TArray<UFactory*>())
-		.IsEnabled(true)
-		;
+		.IsEnabled(true);
 
 	// Left SideBar
-
 	TSharedRef<SVerticalBox> LeftPanel = SNew(SVerticalBox)
 		+SVerticalBox::Slot()
 		.AutoHeight()
@@ -281,12 +253,7 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 			.Padding(0,20,0,0)
 			[
 				ConstructOutputLog()
-			]
-		
-		
-		;
-
-
+			];
 
 	// Start UI
 	TSharedRef<SVerticalBox> RootWidget = SNew(SVerticalBox);
@@ -422,14 +389,10 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 			]
 		]; // Close VBox
 		
-
-		
 	ChildSlot
 	[
-
 		RootWidget
 	];
-
 }
 
 SPublisherWindow::~SPublisherWindow()
@@ -442,7 +405,7 @@ SPublisherWindow::~SPublisherWindow()
 
 TSharedPtr<SWidget> SPublisherWindow::ConstructThumbnailWidget()
 {
-	// Init the thumb brush. these settings are only for pre-image choice
+	// Init the thumb brush.
 	ThumbBrush = FSlateBrush();
 	ThumbBrush.SetImageSize(FVector2D(256.0));
 
@@ -461,7 +424,6 @@ TSharedPtr<SWidget> SPublisherWindow::ConstructThumbnailWidget()
 			.HAlign(HAlign_Center)
 			.VAlign(VAlign_Center)
 			[
-				// #todo Some problems with validity here, so lets just disable this for now
 				SNew(SCircularThrobber)
 				.Radius(48)
 				.NumPieces(10)
@@ -511,20 +473,8 @@ FReply SPublisherWindow::OnCaptureImageFromFile()
 
 const FSlateBrush* SPublisherWindow::GetThumbnailImage() const
 {
-	//if (ThumbBrush.GetRenderingResource().IsValid())
-	//{
-	//}
+	// #todo This function is old-code, now its a simple return, we can drop the delegate and pass the Var, but need to do thorough testing when we do this, since this has been a long-running problem area
 	return &ThumbBrush;
-
-	//if (ShotTexture && ShotTexture->IsValidLowLevel())
-	//{
-	//	return &ThumbBrush;
-	//}
-
-	// #todo. Since slate redraws on tick, this is creating a new brush every run, its also flooding the log.
-	//FSlateBrush* NullBrush = new FSlateBrush();
-	//NullBrush->SetImageSize(FVector2D(256.0));
-	//return NullBrush;
 }
 
 UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
@@ -619,7 +569,6 @@ UTexture2D* SPublisherWindow::CreateThumbnailFromFile()
 	}
 
 	UTexture2D* OriginalTexture = FImageUtils::ImportFileAsTexture2D(SourceImagePath);
-	//OriginalTexture->SetFlags(RF_Standalone);
 	if (!OriginalTexture)
 	{
 		return nullptr;
@@ -697,8 +646,6 @@ FReply SPublisherWindow::TryPackage()
 		FString Filename;
 		bool bGotFilename = FPackageName::TryConvertLongPackageNameToFilename(Path, Filename);
 
-		
-
 		// Find the UPackage to determine the asset type
 		UPackage* PrimaryAssetPackage = CurrentlySelectedAsset.GetPackage();
 		//UPackage* Package = FindPackage(nullptr, *CurrentlySelectedAsset.PackageName.ToString());
@@ -721,7 +668,6 @@ FReply SPublisherWindow::TryPackage()
 		PublishList.Add(Filename);
 	}
 
-
 	// Build a Struct from the metadata to pass to the packager
 	FVaultMetadata AssetPublishMetadata;
 
@@ -733,13 +679,11 @@ FReply SPublisherWindow::TryPackage()
 	AssetPublishMetadata.Tags = TagsWidget->GetUserSelectedTags();
 	AssetPublishMetadata.ObjectsInPack = ObjectsInPackage;
 
-
 	// Lets see if we want to append any new tags to our global tags library
 	if (TagsWidget->GetShouldAddNewTagsToLibrary())
 	{
 		FVaultSettings::Get().SaveVaultTags(TagsWidget->GetUserSelectedTags());
 	}
-
 
 	if (UAssetPublisher::PackageSelected(PublishList, AssetPublishMetadata))
 	{
@@ -796,8 +740,6 @@ FText SPublisherWindow::GetSecondaryAssetList() const
 
 bool SPublisherWindow::CanPackage() const
 {
-	// #todo Currently only check pack name, should check more like screenshot and other details. Enforce some rules!
-	
 	if (PackageNameInput->GetText().IsEmpty() ||
 		AuthorInput->GetText().IsEmpty() ||
 		DescriptionInput->GetText().IsEmpty() ||
@@ -909,9 +851,7 @@ FReply SPublisherWindow::GenerateMapFromPreset()
 
 	FEditorFileUtils::LoadMap(MapPath, true, true);
 	return FReply::Handled();
-
 }
-
 
 #undef LOCTEXT_NAMESPACE
 #undef VAULT_PUBLISHER_THUMBNAIL_SIZE

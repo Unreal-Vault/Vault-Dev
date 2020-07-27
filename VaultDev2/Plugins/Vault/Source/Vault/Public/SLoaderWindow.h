@@ -16,12 +16,6 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 	SLATE_BEGIN_ARGS(SLoaderWindow) {}
 	SLATE_END_ARGS()
 
-	// Constructor
-	SLoaderWindow();
-
-	// Destructor
-	~SLoaderWindow();
-
 	// On Construct
 	void Construct(const FArguments& InArgs, const TSharedRef<SDockTab>& ConstructUnderMajorTab, const TSharedPtr<SWindow>& ConstructUnderWindow);
 
@@ -101,8 +95,6 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 
 	// ---- End Search Bar System ----
 
-
-
 	// ---- Metadata Zone ---- //
 
 	void ConstructMetadataWidget(TSharedPtr<FVaultMetadata> AssetMeta);
@@ -111,14 +103,12 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 	
 	// GLOBALS
 
-
 	void LoadAssetPackIntoProject(TSharedPtr<FVaultMetadata> InPack);
 
 	void DeleteAssetPack(TSharedPtr<FVaultMetadata> InPack);
 
 	TSet<FString> ActiveTagFilters;
 	TSet<FName> ActiveDevFilters;
-
 
 	// Holder for all Meta files found during a file search. This is a cached version gathered on Construction, and can be updated with the RefreshAvailableFiles()
 	TArray<FVaultMetadata> MetaFilesCache;
@@ -150,14 +140,11 @@ class VAULT_API SLoaderWindow : public SCompoundWidget
 	// Bound to Static delegate in Asset Publisher, so we can update when user pushes a new asset
 	void OnNewAssetPublished();
 
-
-
 public:
 
 	void ModifyActiveTagFilters(FString TagModified, bool bFilterThis);
 
 	void ModifyActiveDevFilters(FName DevModified, bool bFilterThis);
-
 };
 
 

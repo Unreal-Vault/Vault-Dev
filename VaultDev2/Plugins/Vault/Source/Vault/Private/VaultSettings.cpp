@@ -11,9 +11,7 @@
 
 // For simplicity in changing keys and looking them up, here's all the keys
 
-// Folder Names
-
-// These 2 vars registered in header for access elsewhere.
+// Folder Names - These 2 vars registered in header for access elsewhere.
 const FString FVaultSettings::DefaultVaultSettingsFolder("Vault");
 const FString FVaultSettings::DefaultGlobalsPath(FPlatformProcess::UserDir() + DefaultVaultSettingsFolder);
 
@@ -22,8 +20,7 @@ static const FString GlobalSettingsFilename = "VaultGlobalSettings.json";
 static const FString GlobalTagPoolFilename = "VaultTags.json";
 static const FString LocalSettingsFilename = "VaultLocalSettings.json";
 
-// File paths
-//static const FString DefaultGlobalsPath = FPlatformProcess::UserDir() + DefaultVaultSettingsFolder;
+// File Paths - static const FString DefaultGlobalsPath = FPlatformProcess::UserDir() + DefaultVaultSettingsFolder;
 static const FString DefaultGlobalTagsPath = FPlatformProcess::UserDir() + FVaultSettings::DefaultVaultSettingsFolder;
 static const FString VaultPluginRoot = IPluginManager::Get().FindPlugin(TEXT("Vault"))->GetBaseDir();
 static const FString LocalSettingsFilePathFull = VaultPluginRoot / LocalSettingsFilename;
@@ -43,7 +40,6 @@ FVaultSettings& FVaultSettings::Get()
 	static FVaultSettings VaultSettings;
 	return VaultSettings;
 }
-
 
 // Init, set up files and folders etc. Called from Plugin startup
 void FVaultSettings::Initialize()
@@ -100,13 +96,7 @@ void FVaultSettings::Initialize()
 		IsEditorInitialized = false;
 		FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer();
 		LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FVaultSettings::OnEditorLoaded);
-
-
-
 	}
-	
-
-
 }
 
 // Get vault local
@@ -142,7 +132,7 @@ FString FVaultSettings::GetAssetLibraryRoot()
 	return FString();
 }
 
-// Write any json file out to a file.
+// Write any Json file out to a file.
 bool FVaultSettings::WriteJsonObjectToFile(TSharedPtr<FJsonObject> JsonFile, FString FilepathFull)
 {
 	FString OutputString;
@@ -161,7 +151,6 @@ void FVaultSettings::GenerateBaseLocalSettingsFile()
 	JsonLocalSettings->SetStringField(GlobalTagsPoolPathKey, (DefaultGlobalTagsPath / GlobalTagPoolFilename));
 	JsonLocalSettings->SetBoolField(TEXT("ClearPackageListOnSuccessfulPackage"), false);
 
-
 	FString TempPath = FPlatformMisc::GetEnvironmentVariable(TEXT("TEMP"));
 	FPaths::NormalizeDirectoryName(TempPath);
 
@@ -169,12 +158,6 @@ void FVaultSettings::GenerateBaseLocalSettingsFile()
 	JsonLocalSettings->SetStringField(TEXT("PackageLogPath"), TempPath);
 
 	WriteJsonObjectToFile(JsonLocalSettings, LocalSettingsFilePathFull);
-
-
-
-
-
-
 }
 
 void FVaultSettings::GenerateBaseGlobalSettingsFile()
@@ -187,7 +170,7 @@ void FVaultSettings::GenerateBaseGlobalSettingsFile()
 
 void FVaultSettings::GenerateBaseTagPoolFile()
 {
-	TSet<FString> PlaceholderTag = { "Environment", "Prop", "Character", "Testing", "Developer" };
+	TSet<FString> PlaceholderTag = { "Environment", "Prop", "Character" };
 	SaveVaultTags(PlaceholderTag);
 }
 
@@ -233,7 +216,6 @@ void FVaultSettings::UpdateVaultFiles()
 
 	WriteJsonObjectToFile(Local, LocalSettingsFilePathFull);
 	WriteJsonObjectToFile(Global, GetGlobalSettingsFilePathFull());
-
 
 }
 

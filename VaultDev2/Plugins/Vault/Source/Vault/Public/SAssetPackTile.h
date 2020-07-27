@@ -6,7 +6,6 @@
 #include "SlateFwd.h"
 #include "VaultTypes.h"
 
-
 class VAULT_API SAssetTileItem : public SCompoundWidget
 {
 public:
@@ -17,8 +16,6 @@ public:
 	SLATE_ARGUMENT(TSharedPtr<FVaultMetadata>, AssetItem)
 
 	SLATE_END_ARGS()
-
-	SAssetTileItem();
 
 	~SAssetTileItem();
 
@@ -38,6 +35,5 @@ private:
 
 	/** Stores our resource for the texture used to clear that flags that keep it from GC */
 	UObject* TextureResource;
-
 	
 };

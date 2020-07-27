@@ -1,13 +1,11 @@
 // Copyright Daniel Orchard 2020
 
 #include "SAssetPackTile.h"
-
 #include "VaultSettings.h"
-#include "SlateBasics.h"
-
 #include "MetadataOps.h"
-#include "ImageUtils.h"
 
+#include "SlateBasics.h"
+#include "ImageUtils.h"
 #include "Engine/Texture2D.h"
 
 #include "Styling/SlateBrush.h"
@@ -18,9 +16,6 @@
 #include "Widgets/Images/SThrobber.h"
 
 #define LOCTEXT_NAMESPACE "VaultListsDefinitions"
-
-
-SAssetTileItem::SAssetTileItem() {}
 
 SAssetTileItem::~SAssetTileItem()
 {
@@ -35,7 +30,6 @@ void SAssetTileItem::Construct(const FArguments& InArgs)
 {
 	AssetItem = InArgs._AssetItem;
 
-	//FSlateBrush* ThumbBrush = new FSlateBrush();
 	TSharedRef<SWidget> ThumbnailWidget = CreateTileThumbnail(AssetItem);
 	
 	// Clear Old
@@ -56,7 +50,6 @@ void SAssetTileItem::Construct(const FArguments& InArgs)
 			[
 				// Optional Overlay Box to help additional meta later in pipe. 
 				SNew(SOverlay)
-
 				+SOverlay::Slot()
 				.HAlign(HAlign_Fill)
 				.VAlign(VAlign_Fill)
@@ -80,7 +73,6 @@ void SAssetTileItem::Construct(const FArguments& InArgs)
 					.Text(FText::FromName(InArgs._AssetItem->PackName.IsNone() ? TEXT("Unknown Pack") : AssetItem->PackName))
 					.WrapTextAt(300)
 					.Justification(ETextJustify::Left)
-					//.TextStyle(F)
 				]
 		];
 		
@@ -119,7 +111,6 @@ TSharedRef<SWidget> SAssetTileItem::CreateTileThumbnail(TSharedPtr<FVaultMetadat
 		Brush->SetResourceObject(ThumbTexture);
 		Brush->DrawAs = ESlateBrushDrawType::Image;
 		TextureResource = Brush->GetResourceObject();
-
 	}
 
 	return SNew(SOverlay)

@@ -12,14 +12,10 @@
 static const FName AssetPublisherTabId("AssetPublisher");
 static const FName AssetLoaderTabId("AssetLoader");
 
-
 void SVaultRootPanel::Construct(const FArguments& InArgs, const TSharedRef<SDockTab>& ConstructUnderMajorTab, const TSharedPtr<SWindow>& ConstructUnderWindow)
 {
-
 	TabManager = FGlobalTabmanager::Get()->NewTabManager(ConstructUnderMajorTab);
-
 	TabManager->RegisterTabSpawner(AssetPublisherTabId, FOnSpawnTab::CreateRaw(this, &SVaultRootPanel::HandleTabManagerSpawnTab, AssetPublisherTabId));
-	
 	TabManager->RegisterTabSpawner(AssetLoaderTabId, FOnSpawnTab::CreateRaw(this, &SVaultRootPanel::HandleTabManagerSpawnTab, AssetLoaderTabId));
 
 	// Tab Layout
@@ -35,37 +31,24 @@ void SVaultRootPanel::Construct(const FArguments& InArgs, const TSharedRef<SDock
 	);
 
 	FMenuBarBuilder MenuBarBuilder = FMenuBarBuilder(TSharedPtr<FUICommandList>());
-
 	MenuBarBuilder.AddPullDownMenu(LOCTEXT("WindowMenuLabel", "Windows"), FText::GetEmpty(), FNewMenuDelegate::CreateStatic(&SVaultRootPanel::FillWindowMenu, TabManager), "Window");
-
-
 
 	ChildSlot
 		[
 			SNew(SVerticalBox)
-
 			+ SVerticalBox::Slot()
-				.AutoHeight()
-		[
-			MenuBarBuilder.MakeWidget()
-		]
+			.AutoHeight()
+			[
+				MenuBarBuilder.MakeWidget()
+			]
 
 			+ SVerticalBox::Slot()
 		    .FillHeight(1.f)
-		//.AutoHeight()
-		//[
-
-		//]
-
-		[
-			TabManager->RestoreFrom(Layout, ConstructUnderWindow).ToSharedRef()
-
-		]
+			[
+				TabManager->RestoreFrom(Layout, ConstructUnderWindow).ToSharedRef()
+			]
 		];
-
 }
-
-
 
 TSharedRef<SDockTab> SVaultRootPanel::HandleTabManagerSpawnTab(const FSpawnTabArgs& Args, FName TabIdentifier) const
 {
@@ -85,9 +68,7 @@ TSharedRef<SDockTab> SVaultRootPanel::HandleTabManagerSpawnTab(const FSpawnTabAr
 
 		DockTab->SetContent(LoaderWidget);
 	}
-
 	return DockTab;
-
 }
 
 void SVaultRootPanel::FillWindowMenu(FMenuBuilder& MenuBuilder, const TSharedPtr<FTabManager> TabManager)
@@ -97,13 +78,7 @@ void SVaultRootPanel::FillWindowMenu(FMenuBuilder& MenuBuilder, const TSharedPtr
 		return;
 	}
 
-#if !WITH_EDITOR
-	FGlobalTabmanager::Get()->PopulateTabSpawnerMenu(MenuBuilder, WorkspaceMenu::GetMenuStructure().GetStructureRoot());
-#endif //!WITH_EDITOR
-
 	TabManager->PopulateLocalTabSpawnerMenu(MenuBuilder);
 }
-
-
 
 #undef LOCTEXT_NAMESPACE

@@ -10,21 +10,9 @@
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Text/SRichTextBlock.h"
 #include "EditorStyleSet.h"
-
 #include "Editor/EditorEngine.h"
 
 #define LOCTEXT_NAMESPACE "VaultSetupWizard"
-
-SVaultSetupWizard::SVaultSetupWizard()
-{
-}
-
-SVaultSetupWizard::~SVaultSetupWizard()
-{
-}
-
-
-
 
 void SVaultSetupWizard::Construct(const FArguments& Args)
 {

@@ -11,7 +11,6 @@
 #include "VaultSettings.h"
 #include "SPublisherWindow.h"
 #include "AssetPublisher.h"
-
 #include "LevelEditor.h"
 
 static const FName VaultTabName("VaultOperations");
@@ -19,8 +18,6 @@ static const FName VaultPublisherName("VaultPublisher");
 static const FName VaultLoaderName("VaultLoader");
 
 #define LOCTEXT_NAMESPACE "FVaultModule"
-
-// Create our Custom Log Category
 DEFINE_LOG_CATEGORY(LogVault);
 
 class FVaultCommands : public TCommands<FVaultCommands>
@@ -98,9 +95,7 @@ void FVaultModule::StartupModule()
 void FVaultModule::ShutdownModule()
 {
 	FVaultStyle::Shutdown();
-
 	FVaultCommands::Unregister();
-
 	TSharedRef<FGlobalTabmanager> TabManager = FGlobalTabmanager::Get();
 	TabManager->UnregisterTabSpawner(VaultTabName);
 }
@@ -109,7 +104,6 @@ void FVaultModule::SpawnOperationsTab()
 {
 	TSharedRef<FGlobalTabmanager> TabManager = FGlobalTabmanager::Get();
 	TabManager->InvokeTab(VaultTabName);
-
 }
 
 FVaultModule& FVaultModule::Get()
@@ -136,7 +130,6 @@ TSharedRef<SDockTab> FVaultModule::SpawnOperationTab(const FSpawnTabArgs& TabSpa
 	SpawnedTab->SetContent(VaultBasePanelWidget);
 
 	return SpawnedTab;
-
 }
 
 

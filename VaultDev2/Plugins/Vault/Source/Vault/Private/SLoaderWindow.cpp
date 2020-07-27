@@ -3,21 +3,19 @@
 #include "SLoaderWindow.h"
 
 #include "Vault.h"
-#include "EditorSupportDelegates.h" // this doesnt really work atm, need a better clean up or way of migrating maps.
 #include "VaultSettings.h"
 #include "MetadataOps.h"
-#include <ImageUtils.h>
-#include "VaultTypes.h"
 #include "SAssetPackTile.h"
-#include <EditorStyleSet.h>
+#include "VaultStyle.h"
+#include "AssetPublisher.h"
+#include "VaultTypes.h"
 
+#include "ImageUtils.h"
+#include "EditorStyleSet.h"
 #include "PakFileUtilities.h"
 #include "EditorFramework/AssetImportData.h"
 #include "AssetImportTask.h"
 #include "AssetToolsModule.h"
-
-#include "VaultStyle.h"
-#include "AssetPublisher.h"
 
 
 #define LOCTEXT_NAMESPACE "SVaultLoader"
@@ -148,15 +146,6 @@ private:
 	FDeveloperFilteringItemPtr Entry;
 	TSharedPtr<SLoaderWindow> ParentWindow;
 };
-
-SLoaderWindow::SLoaderWindow() {}
-
-SLoaderWindow::~SLoaderWindow()
-{
-#if WITH_EDITOR
-	FEditorSupportDelegates::PrepareToCleanseEditorObject.RemoveAll(this);
-#endif
-}
 
 void SLoaderWindow::Construct(const FArguments& InArgs, const TSharedRef<SDockTab>& ConstructUnderMajorTab, const TSharedPtr<SWindow>& ConstructUnderWindow)
 {

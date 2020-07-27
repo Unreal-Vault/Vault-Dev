@@ -12,7 +12,6 @@
 #include <Engine/GameViewportClient.h>
 #include "VaultOutputLog.h"
 
-
 class VAULT_API SPublisherWindow : public SCompoundWidget
 {
 	SLATE_BEGIN_ARGS(SPublisherWindow) {}
@@ -36,9 +35,6 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 
 	// Get Image Brush for SImage, or return null if not valid
 	const FSlateBrush* GetThumbnailImage() const;
-
-
-	//void DestroyThumbnail();
 
 	// Viewport Shot, whether captured or loaded. Passed into our SlateBrush, this ref is mainly for checking streaming status
 	UTexture2D* ShotTexture;
