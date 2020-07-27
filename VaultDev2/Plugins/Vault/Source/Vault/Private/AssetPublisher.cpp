@@ -1,5 +1,4 @@
 // Copyright Daniel Orchard 2020
-// Copyright Daniel Orchard 2020
 
 #include "AssetPublisher.h"
 #include "PakFileUtilities.h"
