@@ -56,4 +56,9 @@ private:
 	// Updates elements of the JSON files that should change on init.
 	void UpdateVaultFiles();
 
+	// Setup Wizard Helper Stuff
+	bool IsEditorInitialized;
+	FDelegateHandle LoadedDelegateHandle;
+	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
+
 };

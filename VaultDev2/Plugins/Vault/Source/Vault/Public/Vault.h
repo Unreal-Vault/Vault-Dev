@@ -28,12 +28,7 @@ public:
 	// Get Module function
 	static FVaultModule& Get();
 
-
-
 	UAssetPublisher* GetAssetPublisherInstance() { return AssetPublisherInstance; }
-
-
-
 	
 private:
 
@@ -42,9 +37,6 @@ private:
 
 	TSharedRef<SDockTab> SpawnOperationTab(const FSpawnTabArgs& TabSpawnArgs);
 
-	//struct FVaultSettings* VaultSettingsObj;
-
-private:
 	TSharedPtr<class FUICommandList> PluginCommands;
 
 	UAssetPublisher* AssetPublisherInstance;

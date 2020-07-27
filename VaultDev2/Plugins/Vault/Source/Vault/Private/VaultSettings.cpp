@@ -7,6 +7,7 @@
 #include "Serialization\JsonReader.h"
 #include <Interfaces/IPluginManager.h>
 #include "Misc/AssertionMacros.h"
+#include "SVaultSetupWizard.h" // Our First time setup window
 
 // For simplicity in changing keys and looking them up, here's all the keys
 
@@ -14,7 +15,7 @@
 static const FString DefaultVaultSettingsFolder("Vault");
 
 // Filenames
-static const FString GlobalSettingsFilename = "VaultSettings.json";
+static const FString GlobalSettingsFilename = "VaultGlobalSettings.json";
 static const FString GlobalTagPoolFilename = "VaultTags.json";
 static const FString LocalSettingsFilename = "VaultLocalSettings.json";
 
@@ -32,9 +33,6 @@ static const FString GlobalSettingsPathKey = "GlobalSettingsPath";
 static const FString GlobalTagsPoolPathKey = "GlobalTagsPoolPath";
 static const FString VaultVersionKey = "Version";
 static const FString LibraryPath = "LibraryPath";
-
-// TJsonWriter<TCHAR, TCondensedJsonPrintPolicy<TCHAR>
-// TJsonWriter<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>
 
 // Singleton Accessor
 FVaultSettings& FVaultSettings::Get()
@@ -93,6 +91,17 @@ void FVaultSettings::Initialize()
 	{
 		UpdateVaultFiles();
 	}
+
+	if (!bLoadedLocalSettings || !bLoadedGlobalSettings || !bLoadedTagPool)
+	{
+		IsEditorInitialized = false;
+		FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer();
+		LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FVaultSettings::OnEditorLoaded);
+
+
+
+	}
+	
 
 
 }
@@ -157,6 +166,12 @@ void FVaultSettings::GenerateBaseLocalSettingsFile()
 	JsonLocalSettings->SetStringField(TEXT("PackageLogPath"), TempPath);
 
 	WriteJsonObjectToFile(JsonLocalSettings, LocalSettingsFilePathFull);
+
+
+
+
+
+
 }
 
 void FVaultSettings::GenerateBaseGlobalSettingsFile()
@@ -217,6 +232,30 @@ void FVaultSettings::UpdateVaultFiles()
 	WriteJsonObjectToFile(Global, GetGlobalSettingsFilePathFull());
 
 
+}
+
+void FVaultSettings::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
+{
+	if (GEditor == nullptr)
+	{
+		return;
+	}
+
+	if (IsInGameThread())
+	{
+		FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer();
+		SlateRenderer->OnSlateWindowRendered().Remove(LoadedDelegateHandle);
+	}
+
+	if (IsEditorInitialized)
+	{
+		return;
+	}
+	IsEditorInitialized = true;
+
+
+	// Generate our new users Message here:
+	GEditor->EditorAddModalWindow(SNew(SVaultSetupWizard));
 }
 
 bool FVaultSettings::SaveVaultTags(TSet<FString> NewTags)

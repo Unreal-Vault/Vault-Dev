@@ -60,7 +60,6 @@ void FVaultModule::StartupModule()
 	// Init the Settings system
 	FVaultSettings::Get().Initialize();
 
-
 	PluginCommands = MakeShareable(new FUICommandList);
 
 	PluginCommands->MapAction(
