@@ -1,4 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright Daniel Orchard 2020
+// Copyright Daniel Orchard 2020
 
 #include "AssetPublisher.h"
 #include "PakFileUtilities.h"
