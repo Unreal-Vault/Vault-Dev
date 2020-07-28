@@ -2,8 +2,10 @@
 	"TagLibrary": [
 		"Testing",
 		"Prop",
+		"Furniture",
 		"Environment",
 		"Developer",
-		"Character"
+		"Character",
+		"Bed"
 	]
 }

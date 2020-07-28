@@ -367,7 +367,7 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 					.AutoHeight()
 					[
 						SNew(STextBlock)
-						.Text(LOCTEXT("seecondaryAssetBoxHeaderLbl", "Additional Referenced Assets to Package"))
+						.Text(LOCTEXT("seecondaryAssetBoxHeaderLbl", "Package List"))
 					]
 				+ SVerticalBox::Slot()
 					.AutoHeight()
@@ -755,7 +755,7 @@ FText SPublisherWindow::GetSecondaryAssetList() const
 
 
 		// Build our list of dependencies
-		TSet<FName> Dependancies;
+		TSet<FName> Dependancies = { CurrentlySelectedAsset.PackageName };
 		GetAssetDependanciesRecursive(CurrentlySelectedAsset.PackageName, Dependancies, OrigionalRootString);
 
 		// Dependancies includes original item, so lets remove that
