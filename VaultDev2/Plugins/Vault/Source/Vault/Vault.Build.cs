@@ -6,7 +6,7 @@ public class Vault : ModuleRules
 {
 	public Vault(ReadOnlyTargetRules Target) : base(Target)
 	{
-		bLegacyPublicIncludePaths = false; // Omits subfolders from public include paths to reduce compiler command line length. (Previously: true).
+		bLegacyPublicIncludePaths = false; // Omits Sub-Folders from public include paths to reduce compiler command line length. (Previously: true).
 		ShadowVariableWarningLevel = WarningLevel.Error; // Treats shadowed variable warnings as errors. (Previously: WarningLevel.Warning).
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 

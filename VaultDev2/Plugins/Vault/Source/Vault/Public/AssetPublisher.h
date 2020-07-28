@@ -25,8 +25,6 @@ public:
 private:
 
 	static void UpdateSystemMeta(FVaultMetadata& Metadata);
-
-	
 	
 };
 
