@@ -56,7 +56,7 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	// All finished, gather everything and package.
 	FReply TryPackage();
 
-	TArray<FString> GetAssetDependancies(const FName AssetPath) const;
+	void GetAssetDependanciesRecursive(const FName AssetPath, TSet<FName>& AllDependencies, const FString& OriginalRoot) const;
 
 	TSharedPtr<SMultiLineEditableTextBox> SecondaryAssetsBox;
 

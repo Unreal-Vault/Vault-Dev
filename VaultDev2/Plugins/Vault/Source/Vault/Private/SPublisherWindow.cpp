@@ -24,7 +24,6 @@
 #include "Interfaces/IPluginManager.h"
 #include "LevelEditorViewport.h" // Enabling GameView for Thumbnail Gen
 
-
 #define LOCTEXT_NAMESPACE "FVaultPublisher"
 #define VAULT_PUBLISHER_CAPTURE_SIZE 512
 #define VAULT_PUBLISHER_THUMBNAIL_SIZE 256
@@ -628,28 +627,38 @@ FReply SPublisherWindow::TryPackage()
 	UImageWriteBlueprintLibrary::ExportToDisk(ShotTexture, ScreenshotPath, Params);
 
 	// Store PackageName
-	const FString AssetPath = CurrentlySelectedAsset.PackageName.ToString();
+	const FName AssetPath = CurrentlySelectedAsset.PackageName;
 
 	// Our core publish list, which gets written as a text file to be passed to the Pak Tool.
 	TSet<FString> PublishList;
+	
+	// List of objects that are getting packaged, clean, for writing to the JSON.
 	TSet<FString> ObjectsInPackage;
 
-	TSet<FString> AssetsToProcess = { AssetPath };
-	AssetsToProcess.Append(GetAssetDependancies(CurrentlySelectedAsset.PackageName));
+	FString RootPath = AssetPath.ToString();
+	FString OrigionalRootString;
+	RootPath.RemoveFromStart(TEXT("/"));
+	RootPath.Split("/", &OrigionalRootString, &RootPath, ESearchCase::IgnoreCase, ESearchDir::FromStart);
+	OrigionalRootString = TEXT("/") + OrigionalRootString;
+
+	TSet<FName> AssetsToProcess = { AssetPath };
+	GetAssetDependanciesRecursive(CurrentlySelectedAsset.PackageName, AssetsToProcess, OrigionalRootString);
 
 
 	// Loop through all Assets, including the root object, and format into the correct absolute system filename for the UnrealPak operation
-	for (const FString Path : AssetsToProcess)
+	for (const FName Path : AssetsToProcess)
 	{
-		UE_LOG(LogVault, Display, TEXT("Processing Object Path: %s"), *Path);
+		const FString PathString = Path.ToString();
+
+		UE_LOG(LogVault, Display, TEXT("Processing Object Path: %s"), *PathString);
 
 		FString Filename;
-		bool bGotFilename = FPackageName::TryConvertLongPackageNameToFilename(Path, Filename);
+		bool bGotFilename = FPackageName::TryConvertLongPackageNameToFilename(PathString, Filename);
 
 		// Find the UPackage to determine the asset type
 		UPackage* PrimaryAssetPackage = CurrentlySelectedAsset.GetPackage();
 		//UPackage* Package = FindPackage(nullptr, *CurrentlySelectedAsset.PackageName.ToString());
-		UPackage* ItemPackage = FindPackage(nullptr, *Path);
+		UPackage* ItemPackage = FindPackage(nullptr, *PathString);
 
 		if (!PrimaryAssetPackage || !ItemPackage)
 		{
@@ -697,19 +706,36 @@ FReply SPublisherWindow::TryPackage()
 	return FReply::Handled();
 }
 
-TArray<FString> SPublisherWindow::GetAssetDependancies(const FName AssetPath) const
+void SPublisherWindow::GetAssetDependanciesRecursive(const FName AssetPath, TSet<FName>& AllDependencies, const FString& OriginalRoot) const
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>("AssetRegistry");
-	TArray<FName> Dependencies;
-	AssetRegistryModule.Get().GetDependencies(AssetPath, Dependencies);
+	TArray<FName> BaseDependencies;
+	AssetRegistryModule.Get().GetDependencies(AssetPath, BaseDependencies);
 
-	TArray<FString> DependenciesList;
-
-	for (FName& name : Dependencies)
+	for (auto DependsIt = BaseDependencies.CreateConstIterator(); DependsIt; ++DependsIt)
 	{
-		DependenciesList.Add(name.ToString());
+		if (!AllDependencies.Contains(*DependsIt))
+		{
+			const bool bIsEnginePackage = (*DependsIt).ToString().StartsWith(TEXT("/Engine"));
+			const bool bIsScriptPackage = (*DependsIt).ToString().StartsWith(TEXT("/Script"));
+			// Skip all packages whose root is different than the source package list root
+			const bool bIsInSamePackage = (*DependsIt).ToString().StartsWith(OriginalRoot);
+			if (!bIsEnginePackage && !bIsScriptPackage && bIsInSamePackage)
+			{
+				AllDependencies.Add(*DependsIt);
+				GetAssetDependanciesRecursive(*DependsIt, AllDependencies, OriginalRoot);
+			}
+		}
 	}
-	return DependenciesList;
+
+
+	//TArray<FString> DependenciesList;
+
+	//for (FName& name : BaseDependencies)
+	//{
+	//	DependenciesList.Add(name.ToString());
+	//}
+	//return DependenciesList;
 
 }
 
@@ -719,17 +745,28 @@ FText SPublisherWindow::GetSecondaryAssetList() const
 	{
 		FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>("AssetRegistry");
 
+
+		FString RootPath = CurrentlySelectedAsset.PackageName.ToString();
+		FString OrigionalRootString;
+		RootPath.RemoveFromStart(TEXT("/"));
+		RootPath.Split("/", &OrigionalRootString, &RootPath, ESearchCase::IgnoreCase, ESearchDir::FromStart);
+		OrigionalRootString = TEXT("/") + OrigionalRootString;
+
+
+
 		// Build our list of dependencies
-		TArray<FString> Dependancies = GetAssetDependancies(CurrentlySelectedAsset.PackageName);
+		TSet<FName> Dependancies;
+		GetAssetDependanciesRecursive(CurrentlySelectedAsset.PackageName, Dependancies, OrigionalRootString);
 
 		// Dependancies includes original item, so lets remove that
-		Dependancies.Remove(CurrentlySelectedAsset.PackageName.ToString());
+		//Dependancies.Remove(CurrentlySelectedAsset.PackageName.ToString());
 
 		FString FormattedList;
-		for (FString Dependant : Dependancies)
+		for (FName Dependant : Dependancies)
 		{
-			Dependant = FPaths::GetCleanFilename(Dependant);
-			FormattedList += (Dependant);
+			FString DependantString = Dependant.ToString();
+			DependantString = FPaths::GetCleanFilename(DependantString);
+			FormattedList += (DependantString);
 			FormattedList += LINE_TERMINATOR;
 		}
 			   		 	  
