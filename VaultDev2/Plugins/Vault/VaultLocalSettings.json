@@ -1,8 +1,0 @@
-{
-	"Version": "0.2.00",
-	"GlobalSettingsPath": "H:/Vault-Dev/VaultDev2/Plugins/Vault/VaultGlobalSettings.json",
-	"GlobalTagsPoolPath": "H:/Vault-Dev/VaultDev2/Plugins/Vault/VaultTags.json",
-	"ClearPackageListOnSuccessfulPackage": false,
-	"PackageListStoragePath": "C:/Users/Daniel/AppData/Local/Temp",
-	"PackageLogPath": "C:/Users/Daniel/AppData/Local/Temp"
-}
