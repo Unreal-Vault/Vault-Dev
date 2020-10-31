@@ -1,4 +1,4 @@
-// Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
+// Copyright Daniel Orchard 2020
 
 #pragma once
 
@@ -34,7 +34,7 @@ private:
 	void AddToolbarExtension(FToolBarBuilder& Builder);
 	void AddMenuExtension(FMenuBuilder& Builder);
 
-	TSharedRef<SDockTab> SpawnOperationTab(const FSpawnTabArgs& TabSpawnArgs);
+	TSharedRef<SDockTab> CreateVaultMajorTab(const FSpawnTabArgs& TabSpawnArgs);
 
 	TSharedPtr<class FUICommandList> PluginCommands;
 

@@ -67,15 +67,15 @@ void FVaultModule::StartupModule()
 	// Store a Ref to the Level Editor.
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	
-	{
-		TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender());
-		MenuExtender->AddMenuExtension("WindowLayout", EExtensionHook::After, PluginCommands, FMenuExtensionDelegate::CreateRaw(this, &FVaultModule::AddMenuExtension));
-		LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
-	}
+	//{
+	//	TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender());
+	//	MenuExtender->AddMenuExtension("WindowLayout", EExtensionHook::After, PluginCommands, FMenuExtensionDelegate::CreateRaw(this, &FVaultModule::AddMenuExtension));
+	//	LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
+	//}
 	
 	{
 		TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
-		ToolbarExtender->AddToolBarExtension("Settings", EExtensionHook::After, PluginCommands, FToolBarExtensionDelegate::CreateRaw(this, &FVaultModule::AddToolbarExtension));
+		ToolbarExtender->AddToolBarExtension("Content", EExtensionHook::After, PluginCommands, FToolBarExtensionDelegate::CreateRaw(this, &FVaultModule::AddToolbarExtension));
 		LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
 	}
 
@@ -86,10 +86,11 @@ void FVaultModule::StartupModule()
 	// Init tabs
 	TSharedRef<FGlobalTabmanager> TabManager = FGlobalTabmanager::Get();
 
-	TabManager->RegisterNomadTabSpawner(VaultTabName, FOnSpawnTab::CreateRaw(this, &FVaultModule::SpawnOperationTab))
+	TabManager->RegisterNomadTabSpawner(VaultTabName, FOnSpawnTab::CreateRaw(this, &FVaultModule::CreateVaultMajorTab))
 		.SetDisplayName(VaultBasePanelWindowTitle)
-		.SetTooltipText(VaultBasePanelWindowTooltip);
-
+		.SetTooltipText(VaultBasePanelWindowTooltip)
+		//.SetIcon(FSlateIcon((FVaultStyle::Get().GetBrush("Vault.Icon40"))));
+		.SetMenuType(ETabSpawnerMenuType::Hidden); //Hide root menu from the windows dropdown
 }
 
 void FVaultModule::ShutdownModule()
@@ -120,7 +121,7 @@ void FVaultModule::AddMenuExtension(FMenuBuilder& Builder)
 
 
 
-TSharedRef<SDockTab> FVaultModule::SpawnOperationTab(const FSpawnTabArgs& TabSpawnArgs)
+TSharedRef<SDockTab> FVaultModule::CreateVaultMajorTab(const FSpawnTabArgs& TabSpawnArgs)
 {
 	const TSharedRef<SDockTab> SpawnedTab = SNew(SDockTab)
 		.TabRole(ETabRole::MajorTab);
