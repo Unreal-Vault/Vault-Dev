@@ -78,8 +78,11 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	void RefreshOutputLogList();
 
 	FAssetData CurrentlySelectedAsset;
+	FAssetData CurrentlySelectedScreenshotMap;
 	FString GetCurrentAssetPath() const;
+	FString GetCurrentScreenshotMapPath() const;
 	void OnAssetSelected(const FAssetData& InAssetData);
+	void OnScreenshotMapSelectionChanged(const FAssetData& InAssetData);
 
 	bool IsPythonMapGenAvailable() const;
 

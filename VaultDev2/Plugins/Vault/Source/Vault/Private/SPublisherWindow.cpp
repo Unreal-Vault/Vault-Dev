@@ -23,6 +23,7 @@
 #include "ImageWriteBlueprintLibrary.h"
 #include "Interfaces/IPluginManager.h"
 #include "LevelEditorViewport.h" // Enabling GameView for Thumbnail Gen
+#include "VaultStyle.h"
 
 #define LOCTEXT_NAMESPACE "FVaultPublisher"
 #define VAULT_PUBLISHER_CAPTURE_SIZE 512
@@ -82,6 +83,18 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 	TWeakPtr<SPublisherWindow> WeakPtr = SharedThis(this);
 
 	VaultOutputLog = MakeShareable(new FVaultOutputLog);
+
+	// Add our Vault icon as the default icon for the thumbnail.
+	const FSlateBrush* MyBrush = FVaultStyle::Get().GetBrush("Vault.Icon512px");
+	ThumbBrush = *MyBrush;
+
+
+	// Attempt to Show the map in the dropdown by default, but not solved yet.
+	//const FString VaultPluginContentPath = IPluginManager::Get().FindPlugin(TEXT("Vault"))->GetContentDir();
+	//const FString DefaultMapPath = VaultPluginContentPath / "PresetMap.umap";
+	//UObject* MapPtr = LoadObject<UObject>(NULL, *DefaultMapPath, NULL, LOAD_None, NULL);
+	//FAssetData PresetMap = FAssetData(MapPtr);
+	//CurrentlySelectedScreenshotMap = PresetMap;
 	
 	// Our Asset Picking Widget
 	TSharedRef<SWidget> AssetPickerWidget = SNew(SObjectPropertyEntryBox)
@@ -363,6 +376,22 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 					]
 				]
 				+ SVerticalBox::Slot()
+					.AutoHeight()
+					.Padding(FMargin(0, 5, 0, 0))
+					[
+						// Our Asset Picking Widget
+						SNew(SObjectPropertyEntryBox)
+						.ObjectPath(this, &SPublisherWindow::GetCurrentScreenshotMapPath)
+						.AllowedClass(UWorld::StaticClass())
+						.OnObjectChanged(this, &SPublisherWindow::OnScreenshotMapSelectionChanged)
+						.AllowClear(false)
+						.DisplayUseSelected(true)
+						.DisplayBrowse(true)
+						.NewAssetFactories(TArray<UFactory*>())
+						.IsEnabled(true)
+					]
+
+				+ SVerticalBox::Slot()
 				.Padding(0,15,0,3)
 					.AutoHeight()
 					[
@@ -465,8 +494,8 @@ FReply SPublisherWindow::OnCaptureImageFromFile()
 		Brush.SetResourceObject(ShotTexture);
 		Brush.DrawAs = ESlateBrushDrawType::Image;
 		Brush.SetImageSize(FVector2D(VAULT_PUBLISHER_THUMBNAIL_SIZE, VAULT_PUBLISHER_THUMBNAIL_SIZE));
+		ThumbBrush = Brush;
 	}
-	ThumbBrush = Brush;
 	return FReply::Handled();
 }
 
@@ -849,10 +878,24 @@ FString SPublisherWindow::GetCurrentAssetPath() const
 	return CurrentlySelectedAsset.IsValid() ? CurrentlySelectedAsset.ObjectPath.ToString() : FString("");
 }
 
+FString SPublisherWindow::GetCurrentScreenshotMapPath() const
+{
+	return CurrentlySelectedScreenshotMap.IsValid() ? CurrentlySelectedScreenshotMap.ObjectPath.ToString() : FString("");
+}
+
 void SPublisherWindow::OnAssetSelected(const FAssetData& InAssetData)
 {
 	// #todo lambda this for simpler code?
 	CurrentlySelectedAsset = InAssetData;
+}
+
+void SPublisherWindow::OnScreenshotMapSelectionChanged(const FAssetData& InAssetData)
+{
+	// #todo lambda this for simpler code?
+	if (InAssetData.IsValid())
+	{
+		CurrentlySelectedScreenshotMap = InAssetData;
+	}
 }
 
 bool SPublisherWindow::IsPythonMapGenAvailable() const
@@ -873,8 +916,16 @@ FReply SPublisherWindow::GenerateMapFromPreset()
 		as the end user doesnt really need to care the source, just the result
 	*/
 
-	const FString ContentPath = IPluginManager::Get().FindPlugin(TEXT("Vault"))->GetContentDir();
-	const FString MapPath = ContentPath / "PresetMap.umap";
+	FString MapPath;
+	if (CurrentlySelectedScreenshotMap.IsValid())
+	{
+		MapPath = CurrentlySelectedScreenshotMap.ObjectPath.ToString();
+	}
+	else
+	{
+		const FString ContentPath = IPluginManager::Get().FindPlugin(TEXT("Vault"))->GetContentDir();
+		MapPath = ContentPath / "PresetMap.umap";
+	}
 
 	if (CurrentlySelectedAsset.IsValid())
 	{
