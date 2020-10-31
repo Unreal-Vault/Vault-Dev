@@ -9,14 +9,14 @@
 
 #define LOCTEXT_NAMESPACE "FVaultOperationChoce"
 
-static const FName AssetPublisherTabId("AssetPublisher");
-static const FName AssetLoaderTabId("AssetLoader");
+static const FName AssetPublisherTabId("Library Publisher");
+static const FName AssetLoaderTabId("Library Browser");
 
 void SVaultRootPanel::Construct(const FArguments& InArgs, const TSharedRef<SDockTab>& ConstructUnderMajorTab, const TSharedPtr<SWindow>& ConstructUnderWindow)
 {
 	TabManager = FGlobalTabmanager::Get()->NewTabManager(ConstructUnderMajorTab);
-	TabManager->RegisterTabSpawner(AssetPublisherTabId, FOnSpawnTab::CreateRaw(this, &SVaultRootPanel::HandleTabManagerSpawnTab, AssetPublisherTabId));
 	TabManager->RegisterTabSpawner(AssetLoaderTabId, FOnSpawnTab::CreateRaw(this, &SVaultRootPanel::HandleTabManagerSpawnTab, AssetLoaderTabId));
+	TabManager->RegisterTabSpawner(AssetPublisherTabId, FOnSpawnTab::CreateRaw(this, &SVaultRootPanel::HandleTabManagerSpawnTab, AssetPublisherTabId));
 
 	// Tab Layout
 	const TSharedRef<FTabManager::FLayout> Layout = FTabManager::NewLayout("VaultOperationsLayout")->AddArea(
@@ -26,9 +26,11 @@ void SVaultRootPanel::Construct(const FArguments& InArgs, const TSharedRef<SDock
 			->AddTab(AssetLoaderTabId, ETabState::OpenedTab)
 			->SetHideTabWell(false)
 			->SetSizeCoefficient(0.75f)
-			->SetForegroundTab(AssetPublisherTabId)
+			->SetForegroundTab(AssetLoaderTabId)
 		)
 	);
+
+	
 
 	FMenuBarBuilder MenuBarBuilder = FMenuBarBuilder(TSharedPtr<FUICommandList>());
 	MenuBarBuilder.AddPullDownMenu(LOCTEXT("WindowMenuLabel", "Windows"), FText::GetEmpty(), FNewMenuDelegate::CreateStatic(&SVaultRootPanel::FillWindowMenu, TabManager), "Window");
@@ -44,6 +46,7 @@ void SVaultRootPanel::Construct(const FArguments& InArgs, const TSharedRef<SDock
 
 			+ SVerticalBox::Slot()
 		    .FillHeight(1.f)
+			.Padding(0)
 			[
 				TabManager->RestoreFrom(Layout, ConstructUnderWindow).ToSharedRef()
 			]
@@ -56,10 +59,17 @@ TSharedRef<SDockTab> SVaultRootPanel::HandleTabManagerSpawnTab(const FSpawnTabAr
 
 	TSharedRef<SDockTab> DockTab = SNew(SDockTab)
 		.TabRole(ETabRole::PanelTab);
+		// This options stops the editor closing while window open, so lets not use that.
+		//.OnCanCloseTab_Lambda([]()
+		//	{
+		//		return false;
+		//	}
+		//);
 
 	if (TabIdentifier == AssetPublisherTabId)
 	{
 		DockTab->SetContent(SNew(SPublisherWindow));
+		//DockTab->SetLabel(LOCTEXT("PublisherTabLabel", "Asset Publisher"));
 	}
 
 	else if (TabIdentifier == AssetLoaderTabId)
@@ -67,6 +77,7 @@ TSharedRef<SDockTab> SVaultRootPanel::HandleTabManagerSpawnTab(const FSpawnTabAr
 		TSharedRef<SLoaderWindow> LoaderWidget = SNew(SLoaderWindow, DockTab, Args.GetOwnerWindow());
 
 		DockTab->SetContent(LoaderWidget);
+		//DockTab->SetLabel(LOCTEXT("LoaderTabLabel", "Asset Browser"));
 	}
 	return DockTab;
 }
