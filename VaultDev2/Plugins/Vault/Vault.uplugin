@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "0.2.00",
+	"VersionName": "0.3.00",
 	"FriendlyName": "Vault",
 	"Description": "The Vault is a Unreal Editor tool designed to generate asset packs, for easy sharing between projects.",
 	"Category": "Aperture9",
