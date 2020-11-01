@@ -4,4 +4,4 @@
 
 Welcome to the Vault. An Unreal Engine 4 asset library to make sharing and reusing assets easy. 
 
-Check out the full website for more details: [UnrealVault](https://unreal-vault.github.io/)
+Check out the full website for more details: [https://unreal-vault.github.io/](https://unreal-vault.github.io/)
