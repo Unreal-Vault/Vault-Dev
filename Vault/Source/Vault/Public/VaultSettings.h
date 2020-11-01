@@ -41,6 +41,7 @@ public:
 
 	static const FString DefaultVaultSettingsFolder;
 	static const FString DefaultGlobalsPath;
+	static const FString LocalSettingsFilePathFull;
 
 private:
 

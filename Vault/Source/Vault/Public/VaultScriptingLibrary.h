@@ -18,6 +18,6 @@ class VAULT_API UVaultScriptingLibrary : public UBlueprintFunctionLibrary
 	//UFUNCTION()
 	//static void PublishAssetAutomated(UObject* Asset);
 
-	//static void PublishAsset(UObject* Asset, FString PackageName, FString PublisherName, TArray<FString> Tags);
+	//static void PublishAsset(UObject* Asset, FString PackageName, FString DeveloperName, TArray<FString> Tags, FString MapOverridePath = FString());
 	//
 };
