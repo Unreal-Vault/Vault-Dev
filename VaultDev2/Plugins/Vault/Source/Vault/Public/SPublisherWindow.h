@@ -33,9 +33,6 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	// Create Thumbnail from a File
 	FReply OnCaptureImageFromFile();
 
-	// Get Image Brush for SImage, or return null if not valid
-	const FSlateBrush* GetThumbnailImage() const;
-
 	// Viewport Shot, whether captured or loaded. Passed into our SlateBrush, this ref is mainly for checking streaming status
 	UTexture2D* ShotTexture;
 
@@ -98,6 +95,11 @@ class VAULT_API SPublisherWindow : public SCompoundWidget
 	TSharedPtr<SExpandableArea> OutputLogExpandableBox;
 
 	TSharedPtr<class SPublisherTagsWidget> TagsWidget;
+
+	// Author Input
+	FText GetAuthorName() const;
+	FText CurrentAuthorName;
+	void OnAuthorNameTextCommitted(const FText& InText, ETextCommit::Type InCommitType);
 
 };
 

@@ -88,6 +88,10 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 	const FSlateBrush* MyBrush = FVaultStyle::Get().GetBrush("Vault.Icon512px");
 	ThumbBrush = *MyBrush;
 
+	// Pre-Fill in the author name from the Local Settings
+	
+	CurrentAuthorName = FVaultSettings::Get().GetDefaultDeveloperName();
+
 
 	// Attempt to Show the map in the dropdown by default, but not solved yet.
 	//const FString VaultPluginContentPath = IPluginManager::Get().FindPlugin(TEXT("Vault"))->GetContentDir();
@@ -130,6 +134,12 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 					return !CurrentlySelectedAsset.IsValid() ? FLinearColor::Red : FLinearColor::Green;
 				})
 			]
+
+			+ SHorizontalBox::Slot()
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("PackageObjectLbl", "Package Asset"))
+				]
 
 			+ SHorizontalBox::Slot()
 			[
@@ -200,6 +210,10 @@ void SPublisherWindow::Construct(const FArguments& InArgs)
 			[
 				SAssignNew(AuthorInput, SEditableTextBox)
 				.HintText(LOCTEXT("AuthorNameHintTxt", "Author Name"))
+				.Text(this, &SPublisherWindow::GetAuthorName)
+				.OnTextCommitted(this, &SPublisherWindow::OnAuthorNameTextCommitted)
+				.SelectAllTextWhenFocused(true)
+				
 			]
 		]
 
@@ -434,7 +448,6 @@ SPublisherWindow::~SPublisherWindow()
 TSharedPtr<SWidget> SPublisherWindow::ConstructThumbnailWidget()
 {
 	// Init the thumb brush.
-	ThumbBrush = FSlateBrush();
 	ThumbBrush.SetImageSize(FVector2D(256.0));
 
 	return ThumbnailWidget = 
@@ -446,7 +459,7 @@ TSharedPtr<SWidget> SPublisherWindow::ConstructThumbnailWidget()
 			.VAlign(VAlign_Center)
 			[
 				SAssignNew(ThumbnailImage, SImage)
-				.Image(this, &SPublisherWindow::GetThumbnailImage) // Annoying fix to stop crashes on map change
+				.Image(&ThumbBrush)
 			]
 			+ SOverlay::Slot()
 			.HAlign(HAlign_Center)
@@ -497,12 +510,6 @@ FReply SPublisherWindow::OnCaptureImageFromFile()
 		ThumbBrush = Brush;
 	}
 	return FReply::Handled();
-}
-
-const FSlateBrush* SPublisherWindow::GetThumbnailImage() const
-{
-	// #todo This function is old-code, now its a simple return, we can drop the delegate and pass the Var, but need to do thorough testing when we do this, since this has been a long-running problem area
-	return &ThumbBrush;
 }
 
 UTexture2D* SPublisherWindow::CreateThumbnailFromScene()
@@ -939,6 +946,16 @@ FReply SPublisherWindow::GenerateMapFromPreset()
 
 	FEditorFileUtils::LoadMap(MapPath, true, true);
 	return FReply::Handled();
+}
+
+FText SPublisherWindow::GetAuthorName() const
+{
+	return CurrentAuthorName;
+}
+
+void SPublisherWindow::OnAuthorNameTextCommitted(const FText& InText, ETextCommit::Type InCommitType)
+{
+	CurrentAuthorName = InText;
 }
 
 #undef LOCTEXT_NAMESPACE
