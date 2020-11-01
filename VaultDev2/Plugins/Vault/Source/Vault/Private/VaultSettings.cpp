@@ -33,6 +33,10 @@ static const FString GlobalSettingsPathKey = "GlobalSettingsPath";
 static const FString GlobalTagsPoolPathKey = "GlobalTagsPoolPath";
 static const FString VaultVersionKey = "Version";
 static const FString LibraryPath = "LibraryPath";
+static const FString DeveloperNameKey = "DeveloperName";
+
+// Random Extra Statics
+static const FString DefaultDeveloperName = FString(FPlatformProcess::UserName());
 
 // Singleton Accessor
 FVaultSettings& FVaultSettings::Get()
@@ -150,7 +154,9 @@ void FVaultSettings::GenerateBaseLocalSettingsFile()
 	JsonLocalSettings->SetStringField(GlobalSettingsPathKey, (DefaultGlobalsPath / GlobalSettingsFilename));
 	JsonLocalSettings->SetStringField(GlobalTagsPoolPathKey, (DefaultGlobalTagsPath / GlobalTagPoolFilename));
 	JsonLocalSettings->SetBoolField(TEXT("ClearPackageListOnSuccessfulPackage"), false);
+	JsonLocalSettings->SetStringField(DeveloperNameKey, DefaultDeveloperName);
 
+	// We grab the System TEMP Env path here so we can have a safe directory to dump logs too.
 	FString TempPath = FPlatformMisc::GetEnvironmentVariable(TEXT("TEMP"));
 	FPaths::NormalizeDirectoryName(TempPath);
 

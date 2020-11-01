@@ -6,6 +6,7 @@
 #include "Dom/JsonObject.h"
 
 // Info for the Vault Settings. Stored in JSON and assessable via this struct
+
 struct FVaultSettings
 {
 public:
