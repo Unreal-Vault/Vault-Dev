@@ -310,3 +310,14 @@ bool FVaultSettings::ReadVaultTags(TSet<FString>& OutTags)
 	}
 	return false;
 }
+
+FText FVaultSettings::GetDefaultDeveloperName()
+{
+	FString LocalSettingsRaw;
+	FFileHelper::LoadFileToString(LocalSettingsRaw, *LocalSettingsFilePathFull);
+	TSharedPtr<FJsonObject> JsonLocalSettings = MakeShareable(new FJsonObject());
+	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(LocalSettingsRaw);
+	FJsonSerializer::Deserialize(JsonReader, JsonLocalSettings);
+
+	return FText::FromString(JsonLocalSettings->GetStringField(DeveloperNameKey));
+}

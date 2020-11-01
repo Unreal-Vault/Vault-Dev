@@ -28,6 +28,8 @@ public:
 	// Read Existing Tags from the JSON Tag file
 	bool ReadVaultTags(TSet<FString>& OutTags);
 
+	FText GetDefaultDeveloperName();
+
 	// Get our Asset Library root path, defined in the global settings. 
 	FString GetAssetLibraryRoot();
 
